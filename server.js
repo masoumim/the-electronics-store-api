@@ -6,6 +6,12 @@ const express = require('express');
 // Create instance of an express module
 const app = express();
 
+// Require in the Firebase Admin SDK
+const { initializeApp } = require('firebase-admin/app');
+
+// Initialize the Firebase Admin SDK App
+const firebase = initializeApp();
+
 // Require in the dotenv module
 // Will load environment variables contained in .env file
 require('dotenv').config();
@@ -154,7 +160,8 @@ const cartRouter = require("./services/routes/cart.js");
 const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
-app.use(usersRouter, registerRouter, loginRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
+const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
+app.use(usersRouter, registerRouter, loginRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, firebaseAuthRouter);
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
