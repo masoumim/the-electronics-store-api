@@ -52,33 +52,33 @@ const pgPool = new Pool({
 
 app.enable("trust proxy");
 
-if (process.env.NODE_ENV === "development") {
-    // Configure the session options
-    app.use(
-        session({
-            secret: process.env.SESSION_SECRET,
-            cookie: { maxAge: 300000000, secure: "auto" },
-            resave: false,
-            saveUninitialized: false,
-            store: new pgSession({
-                pool: pgPool,                // Connection pool
-                tableName: 'session'         // Table used to store user's session data           
-            })
-        })
-    );
-}
-else {
-    app.use(
-        session({
-            secret: process.env.SESSION_SECRET,
-            cookie: { maxAge: 300000000, secure: true, httpOnly: true, sameSite: "none" },
-            store: new pgSession({
-                pool: pgPool,                // Connection pool
-                tableName: 'session'         // Table used to store user's session data           
-            })
-        })
-    );
-}
+// if (process.env.NODE_ENV === "development") {
+//     // Configure the session options
+//     app.use(
+//         session({
+//             secret: process.env.SESSION_SECRET,
+//             cookie: { maxAge: 300000000, secure: "auto" },
+//             resave: false,
+//             saveUninitialized: false,
+//             store: new pgSession({
+//                 pool: pgPool,                // Connection pool
+//                 tableName: 'session'         // Table used to store user's session data           
+//             })
+//         })
+//     );
+// }
+// else {
+//     app.use(
+//         session({
+//             secret: process.env.SESSION_SECRET,
+//             cookie: { maxAge: 300000000, secure: true, httpOnly: true, sameSite: "none" },
+//             store: new pgSession({
+//                 pool: pgPool,                // Connection pool
+//                 tableName: 'session'         // Table used to store user's session data           
+//             })
+//         })
+//     );
+// }
 
 // Passport.JS is a middleware and must be implemented using app.use(). 
 // The initialize() method initializes the authentication module across our app.
