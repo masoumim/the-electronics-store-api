@@ -6,12 +6,6 @@ const express = require('express');
 // Create instance of an express module
 const app = express();
 
-// Require in the Firebase Admin SDK
-const { initializeApp } = require('firebase-admin/app');
-
-// Initialize the Firebase Admin SDK App
-const firebase = initializeApp();
-
 // Require in the dotenv module
 // Will load environment variables contained in .env file
 require('dotenv').config();
