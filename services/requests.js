@@ -7,7 +7,7 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 // Require in the dotenv module which will get environment variables located in .env file
-require('dotenv').config();
+// require('dotenv').config();
 
 // GET ALL USERS
 async function getAllUsers() {
