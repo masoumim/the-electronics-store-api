@@ -24,7 +24,8 @@ router.post('/firebase-auth', async (req, res) => {
         .verifyIdToken(req.body.tokenId)
         .then((decodedToken) => {            
             const uid = decodedToken.uid;
-            // TODO: Use the UID to authenticate a user        
+            // TODO: Use the UID to authenticate a user 
+            res.status(200).json("Token Received");
         })
         .catch((error) => {
             console.log(error);
