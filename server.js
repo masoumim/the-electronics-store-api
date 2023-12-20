@@ -22,19 +22,19 @@ app.use(
 );
 
 // Request in the pg module used for connecting to PostgreSQL databases
-const { Pool } = require('pg');
+// const { Pool } = require('pg');
 
 // Require in the Passport.JS - used for Authentication
-const passport = require("passport");
+// const passport = require("passport");
 
 // Import the Passport config
-require("./services/passport.js");
+// require("./services/passport.js");
 
 // Require in express-session to enable session support
-const session = require("express-session");
+// const session = require("express-session");
 
 // pgSession is used to store a users session in a postgreSQL db
-const pgSession = require('connect-pg-simple')(session);
+// const pgSession = require('connect-pg-simple')(session);
 
 // Enables body parsing
 app.use(express.json());
@@ -43,14 +43,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Create a new PostgreSQL pool to be used for the sessions table
-const pgPool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
+// const pgPool = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: {
+//         rejectUnauthorized: false
+//     }
+// });
 
-app.enable("trust proxy");
+// app.enable("trust proxy");
 
 // if (process.env.NODE_ENV === "development") {
 //     // Configure the session options
@@ -82,14 +82,14 @@ app.enable("trust proxy");
 
 // Passport.JS is a middleware and must be implemented using app.use(). 
 // The initialize() method initializes the authentication module across our app.
-app.use(passport.initialize());
+// app.use(passport.initialize());
 
 /*
 We want to allow for persistent logins, and we can do this by calling session() on our passport module
 The session() middleware alters the request object and is able to attach 
 a ‘user’ value that can be retrieved from the session id.
 */
-app.use(passport.session());
+// app.use(passport.session());
 
 // swagger-jsdoc: Allows you to markup routes with jsdoc comments. 
 // It then produces a full swagger yml config dynamically which can 
