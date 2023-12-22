@@ -4,10 +4,13 @@ const express = require("express");
 // Require in the Firebase Admin SDK Auth instance
 const auth = require('firebase-admin/auth');
 
-var admin = require("firebase-admin");
+// Require in the Firebase Admin module
+const admin = require("firebase-admin");
 
-var serviceAccount = require('../../firebase-admin-config.js');
+// Get the service account config info
+const serviceAccount = require('../../firebase-admin-config.js');
 
+// Initialize the Admin SDK using the service account config info
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
@@ -18,6 +21,8 @@ const router = express.Router();
 // Export the router
 module.exports = router
 
+// Receive a token ID from the front end and use it to decode
+// a UID belonging to the currently signed in user
 router.post('/firebase-auth', async (req, res) => { 
     // idToken comes from the client app
     auth.getAuth()
