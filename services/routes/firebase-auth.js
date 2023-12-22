@@ -26,7 +26,7 @@ module.exports = router
 router.post('/firebase-auth', async (req, res) => { 
     // idToken comes from the client app
     auth.getAuth()
-        .verifyIdToken(req.body.tokenId)
+        .verifyIdToken(req.body.idToken)
         .then((decodedToken) => {            
             const uid = decodedToken.uid;
             // TODO: Use the UID to authenticate a user 
