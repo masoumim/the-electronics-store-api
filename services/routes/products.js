@@ -124,6 +124,7 @@ module.exports = router
  *               Error retrieving products               
  */
 router.get('/products', async (req, res) => {
+    console.log(req.user);
     try {
         let products;
         // Check if there are any queries in the URL

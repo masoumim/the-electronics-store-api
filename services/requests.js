@@ -35,6 +35,16 @@ async function getUserById(id) {
     return user;
 }
 
+// GET USER BY UID
+async function getUserByUID(uid){
+    const user = await prisma.app_user.findFirst({
+        where:{
+            uid: uid
+        }
+    });
+    return user
+}
+
 // ADD USER
 async function addUser(firstName, lastName, email, hashedPassword) {
     const createdUser = await prisma.app_user.create({
@@ -643,6 +653,7 @@ module.exports = {
     getAllUsers,
     getUserByEmail,
     getUserById,
+    getUserByUID,
     addUser,
     updateUser,
     deleteUser,

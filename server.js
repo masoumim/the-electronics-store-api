@@ -72,17 +72,57 @@ const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Server the Swagger API documentation as JSON
-app.get('/swagger.json', function(req, res) {    
+app.get('/swagger.json', function (req, res) {
     res.send(specs);
-  });
+});
 
-// Test adding an application wide change to the req object
-app.use(function(req, res, next){
-    req.foo = "I am foo";
+// Authenticates user by UID
+const authenticateUser = require('./authenticate-user.js');
+
+// Require in the Firebase Admin SDK Auth instance
+const auth = require('firebase-admin/auth');
+
+// Require in the Firebase Admin module
+const admin = require("firebase-admin");
+
+// Get the service account config info
+const serviceAccount = require('./firebase-admin-config.js');
+
+// Initialize the Admin SDK using the service account config info
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+// Receive a token ID from the front end and use it to decode
+// a UID belonging to the currently signed in user
+app.post('/firebase-auth', async (req, res, next) => {
+    // idToken comes from the client app
+    auth.getAuth()
+        .verifyIdToken(req.body.idToken)
+        .then(async (decodedToken) => {
+            const uid = decodedToken.uid;
+            // Use the UID to authenticate a user
+            authenticatedUser = await authenticateUser(uid);
+            // If user found in postgresql db with matching uid...
+            if (authenticatedUser) res.status(200).json("User Authenticated");
+        })
+        .catch((error) => {
+            console.log(error);
+            res.json(error);
+        });
+});
+
+// Var used to set the request object's 'user' property
+let authenticatedUser;
+
+// Set the request object's 'user' property
+app.use(function (req, res, next) {    
+    req.user = authenticatedUser;
     next();
 });
 
-  app.get("/", function (req, res) {
+// Root page
+app.get("/", function (req, res) {
     res.status(200).json("test");
 });
 
@@ -96,8 +136,8 @@ const cartRouter = require("./services/routes/cart.js");
 const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
-const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
-app.use(usersRouter, registerRouter, loginRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, firebaseAuthRouter);
+// const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
+app.use(usersRouter, registerRouter, loginRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
@@ -106,3 +146,4 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`server is listening on ${PORT}`);
 });
+

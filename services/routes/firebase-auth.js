@@ -1,6 +1,15 @@
 // Require in the express module
 const express = require("express");
 
+// Create a router
+const router = express.Router();
+
+// Export the router
+module.exports = router
+
+// Authenticates user by UID
+const { authenticateUser } = require('../../authenticate-user.js');
+
 // Require in the Firebase Admin SDK Auth instance
 const auth = require('firebase-admin/auth');
 
@@ -12,24 +21,19 @@ const serviceAccount = require('../../firebase-admin-config.js');
 
 // Initialize the Admin SDK using the service account config info
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount)
 });
-
-// Create a router
-const router = express.Router();
-
-// Export the router
-module.exports = router
 
 // Receive a token ID from the front end and use it to decode
 // a UID belonging to the currently signed in user
-router.post('/firebase-auth', async (req, res) => { 
+router.post('/firebase-auth', async (req, res) => {
     // idToken comes from the client app
     auth.getAuth()
         .verifyIdToken(req.body.idToken)
-        .then((decodedToken) => {            
+        .then((decodedToken) => {
             const uid = decodedToken.uid;
-            // TODO: Use the UID to authenticate a user 
+            // Use the UID to authenticate a user
+            authenticateUser(uid);
             res.status(200).json("Token Received");
         })
         .catch((error) => {
