@@ -58,8 +58,7 @@ const options = {
         },
         servers: [
             {
-                url: "http://localhost:8080",
-                url: "https://the-electronics-store-api-962f1726488d.herokuapp.com"
+                url: process.env.NODE_ENV === "development" ? "http://localhost:8080" : "https://the-electronics-store-api-962f1726488d.herokuapp.com" 
             },
         ],
     },
@@ -77,7 +76,7 @@ app.get('/swagger.json', function (req, res) {
     res.send(specs);
 });
 
-// Authenticates user by UID
+// Require in the authenticateUser method which authenticates user by UID
 const authenticateUser = require('./authenticate-user.js');
 
 // Require in the Firebase Admin SDK Auth instance
@@ -104,6 +103,7 @@ app.post('/firebase-auth', async (req, res, next) => {
             const uid = decodedToken.uid;
             // Use the UID to authenticate a user
             authenticatedUser = await authenticateUser(uid);
+            
             // If user found in postgresql db with matching uid...
             if (authenticatedUser) res.status(200).json("User Authenticated");
         })

@@ -46,13 +46,13 @@ async function getUserByUID(uid){
 }
 
 // ADD USER
-async function addUser(firstName, lastName, email, hashedPassword) {
+async function addUser(firstName, lastName, email, uid) {
     const createdUser = await prisma.app_user.create({
         data: {
             first_name: firstName,
             last_name: lastName,
             email: email,
-            password: hashedPassword
+            uid: uid
         }
     });
     return createdUser;

@@ -6,9 +6,6 @@ const express = require("express");
 // Require in validator - used for string validation
 const validator = require('validator');
 
-// Used for hashing passwords
-const bcrypt = require("bcrypt");
-
 // Get formatted timestamps
 const timestamp = require('time-stamp');
 
