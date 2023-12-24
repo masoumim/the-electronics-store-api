@@ -59,6 +59,7 @@ const options = {
         servers: [
             {
                 url: "http://localhost:8080",
+                url: "https://the-electronics-store-api-962f1726488d.herokuapp.com"
             },
         ],
     },
