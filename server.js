@@ -118,6 +118,8 @@ app.get('/sign-out', (req, res) => {
     // Only set authenticatedUser to null if the origin of the request comes from the Heroku frontend (or localhost frontend)
     const host = req.get('host');
     const origin = req.get('origin');
+    console.log(host);
+    console.log(origin);
     if (host || origin) {
         if (origin === "https://electronics-store-8382b35f5fca.herokuapp.com" || host === "http://localhost:8080") {
             authenticatedUser = null;
