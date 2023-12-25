@@ -62,7 +62,7 @@ const options = {
             },
         ],
     },
-    apis: ["./services/routes/*.js"],
+    apis: ["./services/routes/*.js", "./server.js"],
 };
 
 // Use the swaggerJsdoc function to scan through the options passed in as a param and return the converted Swagger specification object.
@@ -111,6 +111,28 @@ app.post('/firebase-auth', async (req, res, next) => {
             console.log(error);
             res.json(error);
         });
+});
+
+
+/**
+ * @swagger
+ *  tags:
+ *    name: Test User
+ *    description: Set user to 'test user' for testing out SwaggerUI API
+ * /swagger-test-user:
+ *   get:
+ *     summary: Set the user to 'test user'
+ *     tags: [Test User]
+ */
+app.get('/swagger-test-user', (req, res) => {
+    authenticatedUser = {
+        id: 41,
+        first_name: 'Test',
+        last_name: 'Test',
+        email: 'test@test.com',
+        uid: 'k8Hjl8AX4CaLYBTE6IAXV5yMNZv2'
+    }
+    res.json("Test User signed in");
 });
 
 // Var used to set the request object's 'user' property
