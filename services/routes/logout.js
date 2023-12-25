@@ -31,7 +31,7 @@ module.exports = router;
  *               Logout Successful.       
  */
 
-// Passport.js exposes a logout function within the request object: req.logout() 
+// Set the 
 router.post('/logout', function (req, res, next) {
     req.logout(function (err) {
         if (err) { return next(err); }

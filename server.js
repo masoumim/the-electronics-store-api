@@ -58,7 +58,7 @@ const options = {
         },
         servers: [
             {
-                url: process.env.NODE_ENV === "development" ? "http://localhost:8080" : "https://the-electronics-store-api-962f1726488d.herokuapp.com" 
+                url: process.env.NODE_ENV === "development" ? "http://localhost:8080" : "https://the-electronics-store-api-962f1726488d.herokuapp.com"
             },
         ],
     },
@@ -103,7 +103,7 @@ app.post('/firebase-auth', async (req, res, next) => {
             const uid = decodedToken.uid;
             // Use the UID to authenticate a user
             authenticatedUser = await authenticateUser(uid);
-            
+
             // If user found in postgresql db with matching uid...
             if (authenticatedUser) res.status(200).json("User Authenticated");
         })
@@ -113,6 +113,11 @@ app.post('/firebase-auth', async (req, res, next) => {
         });
 });
 
+// Sign the user out of the server by setting the authenticatedUser to null
+app.get('/sign-out', (req, res) => {
+    // TODO: Check request object for signed in user in the frontend. If no user sent, don't set authenticatedUser to null.
+    authenticatedUser = null;
+});
 
 /**
  * @swagger
@@ -123,23 +128,51 @@ app.post('/firebase-auth', async (req, res, next) => {
  *   get:
  *     summary: Set the user to 'test user'
  *     tags: [Test User]
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             example:
+ *               Test User signed in
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             example:
+ *               A user is already signed in. Current user must sign out first.
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             example:
+ *               Test user already signed in  
  */
 app.get('/swagger-test-user', (req, res) => {
-    authenticatedUser = {
-        id: 41,
-        first_name: 'Test',
-        last_name: 'Test',
-        email: 'test@test.com',
-        uid: 'k8Hjl8AX4CaLYBTE6IAXV5yMNZv2'
+    // Only set authenticatedUser to 'test user' if another user not currently signed in.
+    if(!authenticatedUser){
+        authenticatedUser = {
+            id: 41,
+            first_name: 'Test',
+            last_name: 'Test',
+            email: 'test@test.com',
+            uid: 'k8Hjl8AX4CaLYBTE6IAXV5yMNZv2'
+        }
+        res.status(200).json("Test User signed in");
     }
-    res.json("Test User signed in");
+    else if(authenticatedUser.email !== "test@test.com"){
+        res.status(403).json("A user is already signed in. Current user must sign out first");
+    }
+    else{
+        res.status(400).json("Test user already signed in");
+    }
 });
 
 // Var used to set the request object's 'user' property
 let authenticatedUser;
 
 // Set the request object's 'user' property
-app.use(function (req, res, next) {    
+app.use(function (req, res, next) {
     req.user = authenticatedUser;
     next();
 });
@@ -152,7 +185,6 @@ app.get("/", function (req, res) {
 // Require in the routers:
 const usersRouter = require("./services/routes/users.js");
 const registerRouter = require("./services/routes/register.js");
-const loginRouter = require("./services/routes/login.js");
 const logoutRouter = require("./services/routes/logout.js");
 const productsRouter = require("./services/routes/products.js");
 const cartRouter = require("./services/routes/cart.js");
@@ -160,7 +192,7 @@ const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
 // const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
-app.use(usersRouter, registerRouter, loginRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
+app.use(usersRouter, registerRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
