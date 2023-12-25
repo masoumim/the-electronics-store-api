@@ -94,7 +94,7 @@ admin.initializeApp({
 });
 
 // Receive a token ID from the front end and use it to decode
-// a UID belonging to the currently signed in user
+// a UID belonging to the currently signed in user on the frontend
 app.post('/firebase-auth', async (req, res, next) => {
     // idToken comes from the client app
     auth.getAuth()
@@ -115,8 +115,10 @@ app.post('/firebase-auth', async (req, res, next) => {
 
 // Sign the user out of the server by setting the authenticatedUser to null
 app.get('/sign-out', (req, res) => {
-    // TODO: Check request object for signed in user in the frontend. If no user sent, don't set authenticatedUser to null.
-    authenticatedUser = null;
+    // Only set authenticatedUser to null if the origin of the request comes from the frontend
+    const host = req.get('host');
+    console.log(host);
+    // authenticatedUser = null;
 });
 
 /**
