@@ -117,7 +117,12 @@ app.post('/firebase-auth', async (req, res, next) => {
 app.get('/sign-out', (req, res) => {
     // Only set authenticatedUser to null if the origin of the request comes from the frontend
     const host = req.get('host');
+    const origin = req.get('origin');
     console.log(host);
+    console.log(origin)
+    if(host || origin){
+        console.log('host or origin set');
+    }
     // authenticatedUser = null;
 });
 
