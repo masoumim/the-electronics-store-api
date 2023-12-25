@@ -115,15 +115,21 @@ app.post('/firebase-auth', async (req, res, next) => {
 
 // Sign the user out of the server by setting the authenticatedUser to null
 app.get('/sign-out', (req, res) => {
-    // Only set authenticatedUser to null if the origin of the request comes from the frontend
+    // Only set authenticatedUser to null if the origin of the request comes from the Heroku frontend (or localhost frontend)
     const host = req.get('host');
     const origin = req.get('origin');
-    console.log(host);
-    console.log(origin)
-    if(host || origin){
-        console.log('host or origin set');
+    if (host || origin) {
+        if (origin === "https://electronics-store-8382b35f5fca.herokuapp.com" || host === "http://localhost:3000") {
+            authenticatedUser = null;
+            res.status(200).json("User signed out of backend");
+        }
+        else{
+            res.status(400).json("Invalid origin URL");
+        }
     }
-    // authenticatedUser = null;
+    else {
+        res.status(400).json("User couldn't be signed out of backend");
+    }
 });
 
 /**
@@ -157,7 +163,7 @@ app.get('/sign-out', (req, res) => {
  */
 app.get('/swagger-test-user', (req, res) => {
     // Only set authenticatedUser to 'test user' if another user not currently signed in.
-    if(!authenticatedUser){
+    if (!authenticatedUser) {
         authenticatedUser = {
             id: 41,
             first_name: 'Test',
@@ -167,10 +173,10 @@ app.get('/swagger-test-user', (req, res) => {
         }
         res.status(200).json("Test User signed in");
     }
-    else if(authenticatedUser.email !== "test@test.com"){
+    else if (authenticatedUser.email !== "test@test.com") {
         res.status(403).json("A user is already signed in. Current user must sign out first");
     }
-    else{
+    else {
         res.status(400).json("Test user already signed in");
     }
 });
