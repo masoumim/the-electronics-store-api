@@ -185,14 +185,13 @@ app.get("/", function (req, res) {
 // Require in the routers:
 const usersRouter = require("./services/routes/users.js");
 const registerRouter = require("./services/routes/register.js");
-const logoutRouter = require("./services/routes/logout.js");
 const productsRouter = require("./services/routes/products.js");
 const cartRouter = require("./services/routes/cart.js");
 const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
 // const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
-app.use(usersRouter, registerRouter, logoutRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
+app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
