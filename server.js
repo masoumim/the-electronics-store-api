@@ -119,7 +119,7 @@ app.get('/sign-out', (req, res) => {
     const host = req.get('host');
     const origin = req.get('origin');
     if (host || origin) {
-        if (origin === "https://electronics-store-8382b35f5fca.herokuapp.com" || host === "http://localhost:3000") {
+        if (origin === "https://electronics-store-8382b35f5fca.herokuapp.com" || host === "http://localhost:8080") {
             authenticatedUser = null;
             res.status(200).json("User signed out of backend");
         }
