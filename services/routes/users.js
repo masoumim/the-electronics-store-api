@@ -53,18 +53,10 @@ module.exports = router
 
 /**
  * @swagger
- * /users/{id}:
+ * /user:
  *   get:
  *     summary: Get user
  *     tags: [Users]
- *     parameters:
- *       - in: path
- *         name: id 
- *         required: true
- *         schema:
- *           type: integer
- *           minimum: 1
- *         description: The user ID
  *     responses:
  *       200:
  *         description: OK
@@ -83,12 +75,6 @@ module.exports = router
  *           application/json:
  *             example:
  *               User not logged in
- *       403:
- *         description: Forbidden
- *         content:
- *           application/json:
- *             example:
- *               User ID does not match ID in URL
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -96,13 +82,14 @@ module.exports = router
  *             example:
  *               Error retrieving user               
  */
-router.get('/users/:id', userCheck, async (req, res) => {
+router.get('/user', userCheck, async (req, res) => {
     try {
         // Get user from the db
-        const user = await requests.getUserById(parseInt(req.params.id));
-
+        // const user = await requests.getUserById(parseInt(req.params.id));
+        
         // Send user object in response
-        res.status(200).json({ id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email });
+        // res.status(200).json({ id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email });
+        res.status(200).json({ id: req.user.id, firstName: req.user.first_name, lastName: req.user.last_name, email: req.user.email });
     } catch (error) {
         res.status(500).json(error);
     }
