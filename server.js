@@ -12,14 +12,15 @@ require('dotenv').config();
 
 // Require in the cors module and set the origin dynamically
 const cors = require('cors');
-const originURL = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://electronics-store-8382b35f5fca.herokuapp.com";
-app.use(
-    cors({
-        origin: originURL,
-        credentials: true,
-        allowedHeaders: "Content-Type, Authorization"
-    })
-);
+app.use(cors())
+// const originURL = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://electronics-store-8382b35f5fca.herokuapp.com";
+// app.use(
+//     cors({
+//         origin: originURL,
+//         credentials: true,
+//         allowedHeaders: "Content-Type, Authorization"
+//     })
+// );
 
 // Enables body parsing
 app.use(express.json());
