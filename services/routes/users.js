@@ -83,6 +83,7 @@ module.exports = router
  *               Error retrieving user               
  */
 router.get('/user', userCheck, async (req, res) => {
+    console.log('/user route called!');
     try {
         // Get user from the db
         // const user = await requests.getUserById(parseInt(req.params.id));
