@@ -69,8 +69,7 @@ module.exports = router
  */
 router.post('/register', async (req, res) => {
     try {
-        // Get registration info from the request body
-        // !!!! TODO: Rewrite this route and replace all firstName with first_name etc.                       
+        // Get registration info from the request body                            
         const newUser = { first_name: req.body.firstName, last_name: req.body.lastName, email: req.body.email, uid: req.body.uid }
 
         // Check if the request body has any missing data
