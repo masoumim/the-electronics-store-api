@@ -39,8 +39,8 @@ module.exports = router
  *           example:
  *             firstName: Mark
  *             lastName: Masoumi
- *             email: masoumi.mark@gmail.com
- *             password: Mark1234567!
+ *             email: masoumi.mark@gmail.com 
+ *             uid: S0M3UidNumb3r
  *     responses:
  *       201:
  *         description: Created
@@ -69,45 +69,45 @@ module.exports = router
  */
 router.post('/register', async (req, res) => {
     try {
-        // Get registration info from the request body                        
-        const newUser = { firstName: req.body.firstName, lastName: req.body.lastName, email: req.body.email, password: req.body.password }
-                
+        // Get registration info from the request body
+        // !!!! TODO: Rewrite this route and replace all firstName with first_name etc.                       
+        const newUser = { first_name: req.body.firstName, last_name: req.body.lastName, email: req.body.email, uid: req.body.uid }
+
         // Check if the request body has any missing data
-        if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.password) return res.status(400).json("Registration failed. Required info is missing.");
-                
+        if (!newUser.first_name || !newUser.last_name || !newUser.email || !newUser.uid) return res.status(400).json("Registration failed. Required info is missing.");
+
         // Validate user input                
         const validationArray = [];
-        validationArray.push(validator.isAlpha(newUser.firstName));
-        validationArray.push(validator.isLength(newUser.firstName, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(newUser.lastName));
-        validationArray.push(validator.isLength(newUser.lastName, { min: 1, max: 50 }));
-        validationArray.push(validator.isEmail(newUser.email));                
-        validationArray.push(validator.isStrongPassword(newUser.password, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }));
-                                
+        validationArray.push(validator.isAlpha(newUser.first_name));
+        validationArray.push(validator.isLength(newUser.first_name, { min: 1, max: 50 }));
+        validationArray.push(validator.isAlpha(newUser.last_name));
+        validationArray.push(validator.isLength(newUser.last_name, { min: 1, max: 50 }));
+        validationArray.push(validator.isEmail(newUser.email));        
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Registration failed. Required info is invalid.");
-                
+
         // Check if a user with that email already exists in the db
         const userCheck = await requests.getUserByEmail(newUser.email);
 
-        if (!userCheck) {
-            // Create new user on Firebase:
-            const createdUserFirebase = await auth.getAuth().createUser({ email: newUser.email, password: newUser.password });
-
+        if (!userCheck) {                        
             // Create new user on Postgresql:
-            const createdUserPG = await requests.addUser(newUser.firstName, newUser.lastName, newUser.email, createdUserFirebase.uid);
+            const createdUserPG = await requests.addUser(newUser.first_name, newUser.last_name, newUser.email, newUser.uid);
 
             // If a user is successfully created, create a new Cart for that user in the DB.
-            if(createdUserPG){
+            if (createdUserPG) {
                 requests.addCart(createdUserPG.id);                
-                res.status(201).json("Registration was successful");
-            }            
+            }         
         }
-        else{
-            res.status(409).json("Registration failed. User with that email address already exists.");                        
+        else {
+            res.status(409).json("Registration failed. User with that email address already exists.");
         }
-    } catch (error) {        
+
+        // Respond with the newly added user
+        res.status(201).json(newUser);
+
+    } catch (error) {
         res.status(500).json(`Registration failed - error: ${error}`);
     }
 });

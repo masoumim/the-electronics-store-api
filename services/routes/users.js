@@ -90,7 +90,12 @@ router.get('/user', userCheck, async (req, res) => {
         
         // Send user object in response
         // res.status(200).json({ id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email });
-        res.status(200).json({ id: req.user.id, firstName: req.user.first_name, lastName: req.user.last_name, email: req.user.email });
+        console.log('/user returning: ');
+        console.log(req.user.id);
+        console.log(req.user.first_name);        
+        console.log(req.user.last_name);        
+        console.log(req.user.email);        
+        res.status(200).json({ id: req.user.id, first_name: req.user.first_name, last_name: req.user.last_name, email: req.user.email });
     } catch (error) {
         res.status(500).json(error);
     }
