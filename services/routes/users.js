@@ -234,10 +234,13 @@ router.put('/users/:id', userCheck, async (req, res) => {
  *             example:
  *               Error deleting user               
  */
-router.delete('/users/:id', userCheck, async (req, res) => {
+router.delete('/user', userCheck, async (req, res) => {
     try {
-        await requests.deleteUser(req.user.id);
-        req.logout(() => {});
+        console.log('delete /user called!');
+        console.log('req.user.id = ');
+        console.log(req.user.id);
+        // await requests.deleteUser(req.user.id);
+        // req.logout(() => {});
         res.status(200).json("User successfully deleted");
     } catch (error) {
         res.status(500).json(error);
