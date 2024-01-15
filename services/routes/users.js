@@ -235,19 +235,10 @@ router.put('/users/:id', userCheck, async (req, res) => {
  *               Error deleting user               
  */
 router.delete('/user', userCheck, async (req, res) => {
-    try {
-        console.log('delete /user called!');
-        
-        console.log('req.query = ');
-        console.log(req.query);
-        
+    try {                
         // Get the UID from the url query
         const uid = req.query.uid;
-
-        console.log(`deleting user with uid:`);
-        console.log(req.query.uid);
-        console.log(uid);
-        
+                
         await requests.deleteUser(uid);
         
         res.status(200).json("User successfully deleted");
