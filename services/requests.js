@@ -74,10 +74,10 @@ async function updateUser(id, firstName, lastName, email) {
 }
 
 // DELETE USER
-async function deleteUser(id) {
+async function deleteUser(uid) {
     const deleteUser = await prisma.app_user.delete({
         where: {
-            id: id,
+            uid: uid,
         }
     });
     return deleteUser
