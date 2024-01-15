@@ -246,10 +246,10 @@ router.delete('/user', userCheck, async (req, res) => {
 
         console.log(`deleting user with uid:`);
         console.log(req.query.uid);
+        console.log(uid);
         
         await requests.deleteUser(uid);
-        // req.logout(() => {});
-  
+        
         res.status(200).json("User successfully deleted");
     } catch (error) {
         res.status(500).json(error);
