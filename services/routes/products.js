@@ -204,7 +204,7 @@ router.get('/products', async (req, res) => {
  */
 router.get('/products/:id', async (req, res) => {
     try {
-        // Get products from the db
+        // Get product from the db
         const product = await requests.getProductById(parseInt(req.params.id));
 
         // Send 404 response if product not in db

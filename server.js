@@ -13,14 +13,6 @@ require('dotenv').config();
 // Require in the cors module and set the origin dynamically
 const cors = require('cors');
 app.use(cors())
-// const originURL = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://electronics-store-8382b35f5fca.herokuapp.com";
-// app.use(
-//     cors({
-//         origin: originURL,
-//         credentials: true,
-//         allowedHeaders: "Content-Type, Authorization"
-//     })
-// );
 
 // Enables body parsing
 app.use(express.json());
@@ -108,13 +100,6 @@ app.post('/firebase-auth', async (req, res, next) => {
 
             console.log(`/firebase-auth route: Setting authenticatedUser to:`);
             console.log(authenticatedUser);
-            // {
-            //     id: 42,
-            //     first_name: 'Won',
-            //     last_name: 'Won',
-            //     email: 'won@won.com',
-            //     uid: 'ypxhGETMHmSI5zfxLzKfQGL6yWz2'
-            //   }
 
             // If user found in postgresql db with matching uid...
             if (authenticatedUser) res.status(200).json("User Authenticated");
@@ -127,27 +112,10 @@ app.post('/firebase-auth', async (req, res, next) => {
 
 // Sets authenticatedUser directly (this route is called when a new user is registered on the frontend)
 app.post('/sign-in-new-user', (req, res) => {
-    console.log('/sign-in-new-user called!');
-
-    // TODO: the authenticatedUser here (req.body) is different from the authenticatedUser set above (/firebase-auth)
-    // Make this route (/sign-in-new-user) have the same authenticatedUser format as above for consistency.
-    // One way would be to call authenticateUser(uid) again... or just replicate what it returns
-
-    
-    // Examine what comes though as the req.body....
-    // TODO: !!!! LOOK AT THE FRONTEND WHEN IT CALLS THIS ROUTE. THE REQUEST BODY PROBABLY HAS 'firstName' and 'lastName'
-    // MAKE SURE THE FRONTEND THAT CALLS THIS ROUTE DOES SO WITH 'first_name' and 'last_name'
+    console.log('/sign-in-new-user called!');            
     authenticatedUser = req.body;    
     console.log('/sign-in-new-user called! Setting authenticatedUser to: ');
     console.log(authenticatedUser);
-
-    // {
-    //     firstName: 'Del',
-    //     lastName: 'D',
-    //     email: 'del@del.com',
-    //     uid: 'GOtwKhS7naR59lGmkZApyr0lbef2'
-    // }
-
     res.status(200).json("New User signed in");
 });
 
