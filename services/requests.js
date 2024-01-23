@@ -36,9 +36,9 @@ async function getUserById(id) {
 }
 
 // GET USER BY UID
-async function getUserByUID(uid){
+async function getUserByUID(uid) {
     const user = await prisma.app_user.findFirst({
-        where:{
+        where: {
             uid: uid
         }
     });
@@ -156,12 +156,12 @@ async function getCartByUserId(userId) {
                 }
             }
         }
-    });        
+    });
     return cart;
 }
 
 // ADD PRODUCT TO CART
-async function addProductToCart(cartId, productId) {    
+async function addProductToCart(cartId, productId) {
     // Check if product is already in cart
     const foundProduct = await prisma.cart_product.findFirst({ where: { cart_id: cartId, product_id: productId } });
 
@@ -177,7 +177,7 @@ async function addProductToCart(cartId, productId) {
                     increment: 1
                 }
             }
-        })                
+        })
     }
     else {
         // Add the product to the cart
@@ -186,7 +186,7 @@ async function addProductToCart(cartId, productId) {
                 cart_id: cartId,
                 product_id: productId
             }
-        })                
+        })
     }
 
     // Get the product so we can increment the cart's subtotal by the product's price
@@ -196,10 +196,10 @@ async function addProductToCart(cartId, productId) {
 
     // Get the cart so we can update it's subtotal, taxes and total
     const cart = await prisma.cart.findFirst({ where: { id: cartId } });
-    const updatedSubtotal = parseFloat(cart.subtotal) + finalPrice;    
+    const updatedSubtotal = parseFloat(cart.subtotal) + finalPrice;
     const updatedTaxes = updatedSubtotal * 0.13;
     const updatedTotal = updatedSubtotal + updatedTaxes;
-              
+
     // Increment num_items in the user's cart and update the subtotal, taxes and total
     await prisma.cart.update({
         where: {
@@ -235,54 +235,69 @@ async function removeProductFromCart(cartId, productId) {
                     }
                 }
             })
-        }
-        else {
-            // Delete the product from the cart
-            await prisma.cart_product.deleteMany({
+
+            // Get the product so we can decrement the cart's total by the product's price
+            const product = await prisma.product.findUnique({ where: { id: productId } });
+            const discountPercent = product.discount_percent / 100;
+            const finalPrice = product.price - (product.price * discountPercent);
+
+            // Get the cart so we can update it's subtotal, taxes and total
+            const cart = await prisma.cart.findFirst({ where: { id: cartId } });
+            const updatedSubtotal = parseFloat(cart.subtotal) - finalPrice;
+            const updatedTaxes = updatedSubtotal * 0.13;
+            const updatedTotal = updatedSubtotal + updatedTaxes;
+
+            // Decrement num_items in the user's cart and update the subtotal, taxes and total  
+            await prisma.cart.update({
                 where: {
-                    cart_id: cartId,
-                    product_id: productId
+                    id: cartId
+                },
+                data: {
+                    subtotal: updatedSubtotal,
+                    taxes: updatedTaxes,
+                    total: updatedTotal,
+                    num_items: {
+                        decrement: 1
+                    }
                 }
             })
+            // Product removed
+            return true;
+        } else {
+            // Product found but not removed
+            return false;
         }
-        
-        // Get the product so we can decrement the cart's total by the product's price
-        const product = await prisma.product.findUnique({ where: { id: productId } });
-        const discountPercent = product.discount_percent / 100;
-        const finalPrice = product.price - (product.price * discountPercent);
-
-        // Get the cart so we can update it's subtotal, taxes and total
-        const cart = await prisma.cart.findFirst({ where: { id: cartId } });
-        const updatedSubtotal = parseFloat(cart.subtotal) - finalPrice;
-        const updatedTaxes = updatedSubtotal * 0.13;        
-        const updatedTotal = updatedSubtotal + updatedTaxes;
-        
-        // Decrement num_items in the user's cart and update the subtotal, taxes and total  
-        await prisma.cart.update({
-            where: {
-                id: cartId
-            },
-            data: {
-                subtotal: updatedSubtotal,
-                taxes: updatedTaxes,
-                total: updatedTotal,
-                num_items: {
-                    decrement: 1
-                }
-            }
-        })    
-        // Product removed / deleted
-        return true;
     } else {
         // Product not found in cart
         return false;
     }
 }
 
+// DELETE PRODUCT FROM CART
+async function deleteProductFromCart(cartId, productId) {
+    // Check if product is in cart
+    const foundProduct = await prisma.cart_product.findFirst({ where: { cart_id: cartId, product_id: productId } });
+
+    if (foundProduct) {
+        await prisma.cart_product.deleteMany({
+            where: {
+                cart_id: cartId,
+                product_id: productId
+            }
+        })
+        // Product deleted
+        return true;
+    }
+    else {
+        // Product not deleted
+        return false;
+    }
+}
+
 // ADD CHECKOUT SESSION
-async function addCheckout(userId, cart) {        
+async function addCheckout(userId, cart) {
     await prisma.checkout_session.create({
-        data:{
+        data: {
             user_id: userId,
             cart_id: cart.id
         }
@@ -307,16 +322,16 @@ async function getCheckout(userId) {
 }
 
 // DELETE CHECKOUT SESSION
-async function deleteCheckout(userId){
+async function deleteCheckout(userId) {
     await prisma.checkout_session.deleteMany({
-        where:{
+        where: {
             user_id: userId
         }
     })
 }
 
 // UPDATE CHECKOUT SESSION SHIPPING ADDRESS
-async function updateCheckoutShipping(userId, addressId) {                
+async function updateCheckoutShipping(userId, addressId) {
     // Update the checkout shipping info
     await prisma.checkout_session.updateMany({
         where: {
@@ -336,7 +351,7 @@ async function updateCheckoutShipping(userId, addressId) {
 }
 
 // UPDATE CHECKOUT SESSION BILLING ADDRESS
-async function updateCheckoutBilling(userId, addressId) {                    
+async function updateCheckoutBilling(userId, addressId) {
     await prisma.checkout_session.updateMany({
         where: {
             user_id: userId
@@ -348,7 +363,7 @@ async function updateCheckoutBilling(userId, addressId) {
 }
 
 // UPDATE CHECKOUT SESSION PAYMENT CARD
-async function updateCheckoutPaymentCard(userId, paymentCardId) {                    
+async function updateCheckoutPaymentCard(userId, paymentCardId) {
     await prisma.checkout_session.updateMany({
         where: {
             user_id: userId
@@ -360,7 +375,7 @@ async function updateCheckoutPaymentCard(userId, paymentCardId) {
 }
 
 // UPDATE CHECKOUT SESSION STAGE
-async function updateCheckoutStage(userId, stageName) {                    
+async function updateCheckoutStage(userId, stageName) {
     await prisma.checkout_session.updateMany({
         where: {
             user_id: userId
@@ -392,22 +407,22 @@ async function addAddress(addressObj) {
 }
 
 // GET ADDRESS BY ADDRESS ID
-async function getAddressById(userId, addressId){
+async function getAddressById(userId, addressId) {
     const foundAddress = await prisma.address.findFirst({
-        where:{
+        where: {
             user_id: userId,
-            id: addressId            
+            id: addressId
         }
     })
     return foundAddress;
 }
 
 // GET ADDRESS BY ADDRESS TYPE
-async function getAddressByType(userId, addressType){
+async function getAddressByType(userId, addressType) {
     const foundAddress = await prisma.address.findFirst({
-        where:{
+        where: {
             user_id: userId,
-            address_type: addressType            
+            address_type: addressType
         }
     })
     return foundAddress;
@@ -435,13 +450,13 @@ async function updateAddress(addressId, userId, addressObj) {
 }
 
 // DELETE ADDRESS
-async function deleteAddress(addressId){
+async function deleteAddress(addressId) {
     await prisma.address.delete({ where: { id: addressId } });
 }
 
 // ADD PAYMENT CARD
-async function addPaymentCard(cardObj) {        
-   const paymentCard = await prisma.payment_card.create({
+async function addPaymentCard(cardObj) {
+    const paymentCard = await prisma.payment_card.create({
         data: {
             card_number: cardObj.cardNumber,
             first_name: cardObj.firstName,
@@ -457,9 +472,9 @@ async function addPaymentCard(cardObj) {
 }
 
 // GET PAYMENT CARD
-async function getPaymentCard(userId){
+async function getPaymentCard(userId) {
     const paymentCard = await prisma.payment_card.findFirst({
-        where:{
+        where: {
             user_id: userId
         }
     })
@@ -471,7 +486,7 @@ async function updatePaymentCard(paymentCardId, userId, cardObj) {
     await prisma.payment_card.update({
         where: {
             id: paymentCardId,
-            user_id: userId            
+            user_id: userId
         },
         data: {
             card_number: cardObj.cardNumber,
@@ -534,7 +549,7 @@ async function addOrder(userId, cartId) {
             userId: userId
         }
         orderBillingAddress = await addAddress(orderBillingAddressObj);
-    }else{
+    } else {
         orderBillingAddress = await getAddressById(userId, orderShippingAddress.id);
     }
 
@@ -637,12 +652,12 @@ async function addOrder(userId, cartId) {
 }
 
 // GET ORDERS
-async function getOrders(userId){
+async function getOrders(userId) {
     const foundOrders = await prisma.order.findMany({
-        where:{
+        where: {
             user_id: userId
         },
-        include:{
+        include: {
             order_product: true
         }
     })
@@ -666,6 +681,7 @@ module.exports = {
     getCartByUserId,
     addProductToCart,
     removeProductFromCart,
+    deleteProductFromCart,
     addCheckout,
     getCheckout,
     deleteCheckout,

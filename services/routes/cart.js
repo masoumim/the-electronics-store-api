@@ -247,7 +247,88 @@ router.post('/cart/remove/:productId', userCheck, getCart, async (req, res) => {
             res.status(200).json("Product successfully removed from Cart");
         }
         else {
-            res.status(400).json("Product not in cart");
+            res.status(400).json("Product not in cart or quantity is 1");
+        }
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+
+/**
+ * @swagger
+ * /cart/delete/{productId}:
+ *   get:
+ *     summary: Delete product from cart
+ *     tags: [Cart]
+ *     parameters:
+ *       - in: path
+ *         name: productId 
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: The product ID
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             example:
+ *               Product successfully deleted from Cart
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             example:
+ *               Product not in cart
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             example:
+ *               User not logged in
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             example:
+ *               Product not found
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             example:
+ *               Error removing product from cart               
+ */
+router.get('/cart/delete/:productId', userCheck, getCart, async (req, res) => {
+    try {
+        // Check if the product exists
+        const product = await requests.getProductById(parseInt(req.params.productId));
+        if (!product) return res.status(404).json("Product not found");
+
+        // Delete product from the cart
+        const deletedProduct = await requests.deleteProductFromCart(req.cart.id, parseInt(req.params.productId));
+
+
+        if (deletedProduct) {
+            const foundCheckout = await requests.getCheckout(req.user.id);
+            const updatedCart = await requests.getCartByUserId(req.user.id);
+
+            // Check if user has items in checkout
+            if (foundCheckout) {
+                // If cart is now empty, delete checkout session
+                if (updatedCart.num_items === 0) {
+                    await requests.deleteCheckout(req.user.id);
+                }
+                else {
+                    // Set the checkout session stage to "shipping"
+                    await requests.updateCheckoutStage(req.user.id, "shipping");
+                }
+            }
+            res.status(200).json("Product successfully deleted from Cart");
+        }
+        else {
+            res.status(400).json("Product not not deleted from cart");
         }
     } catch (error) {
         res.status(500).json(error);
