@@ -309,7 +309,6 @@ router.get('/cart/delete/:productId', userCheck, getCart, async (req, res) => {
         // Delete product from the cart
         const deletedProduct = await requests.deleteProductFromCart(req.cart.id, parseInt(req.params.productId));
 
-
         if (deletedProduct) {
             const foundCheckout = await requests.getCheckout(req.user.id);
             const updatedCart = await requests.getCartByUserId(req.user.id);

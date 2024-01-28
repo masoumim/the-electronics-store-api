@@ -285,6 +285,63 @@ async function deleteProductFromCart(cartId, productId) {
                 product_id: productId
             }
         })
+
+        // Get the product so we can decrement the cart's total by the product's price
+        const product = await prisma.product.findUnique({ where: { id: productId } });
+        const discountPercent = product.discount_percent / 100;
+        let finalPrice = product.price - (product.price * discountPercent);
+        finalPrice = Math.floor(finalPrice * 100) / 100;
+        const quantity = foundProduct.quantity;
+
+        console.log(`price = ${product.price}`)
+        console.log(`discountPercent = ${discountPercent}`)
+        console.log(`finalPrice = ${finalPrice}`)
+        console.log(`quantity = ${quantity}`)
+
+        // Get the cart so we can update it's subtotal, taxes, total and number of items
+        const cart = await prisma.cart.findFirst({ where: { id: cartId } });
+        let foo = Math.floor((finalPrice * quantity) * 100) / 100 // (finalPrice * quantity) with 2 decimal places        
+        
+        if (parseFloat(cart.subtotal) > foo) {
+            console.log('cart.subtotal > foo!');
+            console.log(`cart.subtotal = ${cart.subtotal}`);
+            console.log(`foo = ${foo}`);
+            
+            // Round up foo                        
+            foo = foo.toFixed(1);
+            console.log(`foo = ${foo}`);
+            
+            // TODO: 
+            // If foo doesn't equal cart.subtotal after rounding foo,
+            // try cart.subtotal.toFixed(1) and if it === foo
+        }
+
+        const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(foo);
+        const updatedTaxes = updatedSubtotal * 0.13;
+        const updatedTotal = updatedSubtotal + updatedTaxes;
+
+        console.log(`parseFloat(cart.subtotal) = ${parseFloat(cart.subtotal)}`)
+        console.log(`(finalPrice * quantity) = ${finalPrice * quantity}`)
+        console.log(`Math.floor() method:  = ${foo}`)
+        console.log(`updatedSubtotal = ${updatedSubtotal}`)
+        console.log(`updatedTaxes = ${updatedTaxes}`)
+        console.log(`updatedTotal = ${updatedTotal}`)
+
+        // Decrement num_items in the user's cart and update the subtotal, taxes and total  
+        await prisma.cart.update({
+            where: {
+                id: cartId
+            },
+            data: {
+                subtotal: updatedSubtotal,
+                taxes: updatedTaxes,
+                total: updatedTotal,
+                num_items: {
+                    decrement: quantity
+                }
+            }
+        })
+
         // Product deleted
         return true;
     }
