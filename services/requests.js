@@ -301,19 +301,30 @@ async function deleteProductFromCart(cartId, productId) {
         // Get the cart so we can update it's subtotal, taxes, total and number of items
         const cart = await prisma.cart.findFirst({ where: { id: cartId } });
         let foo = Math.floor((finalPrice * quantity) * 100) / 100 // (finalPrice * quantity) with 2 decimal places        
-        
+
         if (parseFloat(cart.subtotal) > foo) {
             console.log('cart.subtotal > foo!');
             console.log(`cart.subtotal = ${cart.subtotal}`);
             console.log(`foo = ${foo}`);
-            
+
             // Round up foo                        
             foo = foo.toFixed(1);
-            console.log(`foo = ${foo}`);
-            
-            // TODO: 
+            console.log(`foo.toFixed(1) = ${foo}`);
+
             // If foo doesn't equal cart.subtotal after rounding foo,
             // try cart.subtotal.toFixed(1) and if it === foo
+            if (foo !== parseFloat(cart.subtotal)) {
+                console.log('foo !== parseFloat(cart.subtotal)');
+                console.log('attempting to round subtotal:');
+                console.log(`parseFloat(cart.subtotal).toFixed(1) = ${parseFloat(cart.subtotal).toFixed(1)}`);
+                console.log(`foo = ${foo}`);
+
+                // if foo === cart.subtotal, set cart.subtotal.toFixed(1)
+                if (foo === cart.subtotal.toFixed(1)) {
+                    console.log("foo === cart.subtotal.toFixed(1)");
+                    cart.subtotal = cart.subtotal.toFixed(1);
+                }
+            }
         }
 
         const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(foo);
