@@ -286,7 +286,7 @@ async function deleteProductFromCart(cartId, productId) {
             }
         })
 
-        // Get the product so we can decrement the cart's total by the product's price
+        // Get the product so we can decrement the cart's subtotal by the product's price
         const product = await prisma.product.findUnique({ where: { id: productId } });
         const discountPercent = product.discount_percent / 100;
         let finalPrice = product.price - (product.price * discountPercent);
@@ -300,9 +300,15 @@ async function deleteProductFromCart(cartId, productId) {
 
         // Get the cart so we can update it's subtotal, taxes, total and number of items
         const cart = await prisma.cart.findFirst({ where: { id: cartId } });
-        let foo = Math.floor((finalPrice * quantity) * 100) / 100 // (finalPrice * quantity) with 2 decimal places        
+        let foo = Math.floor((finalPrice * quantity) * 100) / 100 // (finalPrice * quantity) with 2 decimal places
+        console.log(`Foo created = ${foo}`);
 
-        if (parseFloat(cart.subtotal) > foo) {
+        // If this product has a discount and...
+        // If the cart's subtotal still has a value after deleting this product
+        // which happens when: 
+        // 1. There are still other products in the cart 
+        // 2. There are no other products in cart, but cart.subtotal still has a value from a rounding difference
+        if (discountPercent && parseFloat(cart.subtotal) > foo) {
             console.log('cart.subtotal > foo!');
             console.log(`cart.subtotal = ${cart.subtotal}`);
             console.log(`foo = ${foo}`);
@@ -325,6 +331,30 @@ async function deleteProductFromCart(cartId, productId) {
                     cart.subtotal = cart.subtotal.toFixed(1);
                 }
             }
+        }
+
+        console.log(`cart.subtotal = ${cart.subtotal}`);
+        console.log(`foo = ${foo}`);
+        console.log(`(finalPrice * quantity) = ${(finalPrice * quantity)}`);
+        console.log(`cart.subtotal = ${cart.subtotal}`);
+
+        // DELETED LAST PRODUCT IN CART
+        // If subtotal still has a value AND that value is equal to finalPrice * quantity
+        if (parseFloat(cart.subtotal) > foo && (finalPrice * quantity) === parseFloat(cart.subtotal)) {
+            // Set foo = finalPrice * quantity
+            console.log(`setting foo = finalPrice * quantity = $${foo = finalPrice * quantity}`);
+            foo = finalPrice * quantity;
+        }
+
+        // DELETED A PRODUCT FROM THE CART
+        // If subtotal still has a value AND that value is NOT equal to finalPrice * quantity
+        if (parseFloat(cart.subtotal) > foo && (finalPrice * quantity) !== parseFloat(cart.subtotal)) {            
+            console.log('!! TEST !!');
+            // Set foo ??
+            foo = finalPrice * quantity;
+            if(cart.num_items === 1){
+                console.log("!! CART IS EMPTY(?) !!");                
+            }            
         }
 
         const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(foo);
