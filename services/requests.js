@@ -286,12 +286,13 @@ async function deleteProductFromCart(cartId, productId) {
             }
         })
 
+        const quantity = foundProduct.quantity;
+
         // Get the product so we can decrement the cart's subtotal by the product's price
         const product = await prisma.product.findUnique({ where: { id: productId } });
         const discountPercent = product.discount_percent / 100;
         let finalPrice = product.price - (product.price * discountPercent);
         finalPrice = Math.floor(finalPrice * 100) / 100;
-        const quantity = foundProduct.quantity;
 
         console.log(`price = ${product.price}`)
         console.log(`discountPercent = ${discountPercent}`)
@@ -348,13 +349,13 @@ async function deleteProductFromCart(cartId, productId) {
 
         // DELETED A PRODUCT FROM THE CART
         // If subtotal still has a value AND that value is NOT equal to finalPrice * quantity
-        if (parseFloat(cart.subtotal) > foo && (finalPrice * quantity) !== parseFloat(cart.subtotal)) {            
+        if (parseFloat(cart.subtotal) > foo && (finalPrice * quantity) !== parseFloat(cart.subtotal)) {
             console.log('!! TEST !!');
             // Set foo ??
             foo = finalPrice * quantity;
-            if(cart.num_items === 1){
-                console.log("!! CART IS EMPTY(?) !!");                
-            }            
+            if (cart.num_items === 1) {
+                console.log("!! CART IS EMPTY(?) !!");
+            }
         }
 
         const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(foo);
@@ -367,6 +368,7 @@ async function deleteProductFromCart(cartId, productId) {
         console.log(`updatedSubtotal = ${updatedSubtotal}`)
         console.log(`updatedTaxes = ${updatedTaxes}`)
         console.log(`updatedTotal = ${updatedTotal}`)
+        console.log(`quantity = ${quantity}`)
 
         // Decrement num_items in the user's cart and update the subtotal, taxes and total  
         await prisma.cart.update({
