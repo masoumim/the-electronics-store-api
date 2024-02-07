@@ -89,7 +89,7 @@ admin.initializeApp({
 // Receive a token ID from the front end and use it to decode
 // a UID belonging to the currently signed in user on the frontend
 app.post('/firebase-auth', async (req, res, next) => {
-    console.log('/firebase-auth route called');
+    // console.log('/firebase-auth route called');
     // idToken comes from the client app
     auth.getAuth()
         .verifyIdToken(req.body.idToken)
@@ -98,8 +98,8 @@ app.post('/firebase-auth', async (req, res, next) => {
             // Use the UID to authenticate a user
             authenticatedUser = await authenticateUser(uid);
 
-            console.log(`/firebase-auth route: Setting authenticatedUser to:`);
-            console.log(authenticatedUser);
+            // console.log(`/firebase-auth route: Setting authenticatedUser to:`);
+            // console.log(authenticatedUser);
 
             // If user found in postgresql db with matching uid...
             if (authenticatedUser) res.status(200).json("User Authenticated");
@@ -112,10 +112,10 @@ app.post('/firebase-auth', async (req, res, next) => {
 
 // Sets authenticatedUser directly (this route is called when a new user is registered on the frontend)
 app.post('/sign-in-new-user', (req, res) => {
-    console.log('/sign-in-new-user called!');            
+    // console.log('/sign-in-new-user called!');           
     authenticatedUser = req.body;    
-    console.log('/sign-in-new-user called! Setting authenticatedUser to: ');
-    console.log(authenticatedUser);
+    // console.log('/sign-in-new-user called! Setting authenticatedUser to: ');
+    // console.log(authenticatedUser);
     res.status(200).json("New User signed in");
 });
 
@@ -129,9 +129,9 @@ app.get('/sign-out', (req, res) => {
 // They may be signed in on the frontend (Firebase Auth), but if *this server restarted at any time,
 // they would be signed out on the backend and so attempts to fetch user info from /user would result in errors. 
 app.get('/check-backend-sign-in', (req, res) => {
-    console.log('/check-backend-sign-in called!');
-    console.log('authenticatedUser = ');
-    console.log(authenticatedUser);
+    // console.log('/check-backend-sign-in called!');
+    // console.log('authenticatedUser = ');
+    // console.log(authenticatedUser);
     
     if (authenticatedUser) {
         res.status(200).json(true);
@@ -195,9 +195,9 @@ let authenticatedUser;
 
 // Set the request object's 'user' property
 app.use(function (req, res, next) {
-    console.log(`server.js - setting req.user to:`);
+    // console.log(`server.js - setting req.user to:`);
     req.user = authenticatedUser;
-    console.log(authenticatedUser);    
+    // console.log(authenticatedUser);
     next();
 });
 

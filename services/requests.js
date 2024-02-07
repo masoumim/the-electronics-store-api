@@ -198,7 +198,13 @@ async function addProductToCart(cartId, productId) {
     const cart = await prisma.cart.findFirst({ where: { id: cartId } });
     const updatedSubtotal = parseFloat(cart.subtotal) + finalPrice;
     const updatedTaxes = updatedSubtotal * 0.13;
-    const updatedTotal = updatedSubtotal + updatedTaxes;
+
+    // Calculate the total
+    // *The postgresql db rounds decimal values to 2 decimal places when entered into the db.
+    // 'updatedSubtotal' and 'updatedTaxes' are added to the db as decimals and then rounded automatically by postgres.
+    // The 'total' value we add to the db is calculated using the rounded values of 'updatedSubtotal' and 'updatedTaxes',
+    // which is how 'updatedSubtotal' and 'updatedTaxes' appear in the db.
+    const total = parseFloat(updatedSubtotal.toFixed(2)) + parseFloat(updatedTaxes.toFixed(2));
 
     // Increment num_items in the user's cart and update the subtotal, taxes and total
     await prisma.cart.update({
@@ -208,7 +214,7 @@ async function addProductToCart(cartId, productId) {
         data: {
             subtotal: updatedSubtotal,
             taxes: updatedTaxes,
-            total: updatedTotal,
+            total: total,
             num_items: {
                 increment: 1
             }
@@ -245,7 +251,13 @@ async function removeProductFromCart(cartId, productId) {
             const cart = await prisma.cart.findFirst({ where: { id: cartId } });
             const updatedSubtotal = parseFloat(cart.subtotal) - finalPrice;
             const updatedTaxes = updatedSubtotal * 0.13;
-            const updatedTotal = updatedSubtotal + updatedTaxes;
+
+            // Calculate the total
+            // *The postgresql db rounds decimal values to 2 decimal places when entered into the db.
+            // 'updatedSubtotal' and 'updatedTaxes' are added to the db as decimals and then rounded automatically by postgres.
+            // The 'total' value we add to the db is calculated using the rounded values of 'updatedSubtotal' and 'updatedTaxes',
+            // which is how 'updatedSubtotal' and 'updatedTaxes' appear in the db.
+            const total = parseFloat(updatedSubtotal.toFixed(2)) + parseFloat(updatedTaxes.toFixed(2));
 
             // Decrement num_items in the user's cart and update the subtotal, taxes and total  
             await prisma.cart.update({
@@ -255,7 +267,7 @@ async function removeProductFromCart(cartId, productId) {
                 data: {
                     subtotal: updatedSubtotal,
                     taxes: updatedTaxes,
-                    total: updatedTotal,
+                    total: total,
                     num_items: {
                         decrement: 1
                     }
@@ -301,74 +313,81 @@ async function deleteProductFromCart(cartId, productId) {
 
         // Get the cart so we can update it's subtotal, taxes, total and number of items
         const cart = await prisma.cart.findFirst({ where: { id: cartId } });
-        let foo = Math.floor((finalPrice * quantity) * 100) / 100 // (finalPrice * quantity) with 2 decimal places
-        console.log(`Foo created = ${foo}`);
+        let cartProductTotalTruncated = Math.floor((finalPrice * quantity) * 100) / 100 // (finalPrice * quantity) with 2 decimal places
+        console.log(`cartProductTotalTruncated created = ${cartProductTotalTruncated}`);
 
         // If this product has a discount and...
         // If the cart's subtotal still has a value after deleting this product
         // which happens when: 
         // 1. There are still other products in the cart 
         // 2. There are no other products in cart, but cart.subtotal still has a value from a rounding difference
-        if (discountPercent && parseFloat(cart.subtotal) > foo) {
-            console.log('cart.subtotal > foo!');
+        if (discountPercent && parseFloat(cart.subtotal) > cartProductTotalTruncated) {
+            console.log('cart.subtotal > cartProductTotalTruncated!');
             console.log(`cart.subtotal = ${cart.subtotal}`);
-            console.log(`foo = ${foo}`);
+            console.log(`cartProductTotalTruncated = ${cartProductTotalTruncated}`);
 
-            // Round up foo                        
-            foo = foo.toFixed(1);
-            console.log(`foo.toFixed(1) = ${foo}`);
+            // Round up cartProductTotalTruncated                        
+            cartProductTotalTruncated = cartProductTotalTruncated.toFixed(1);
+            console.log(`cartProductTotalTruncated.toFixed(1) = ${cartProductTotalTruncated}`);
 
-            // If foo doesn't equal cart.subtotal after rounding foo,
-            // try cart.subtotal.toFixed(1) and if it === foo
-            if (foo !== parseFloat(cart.subtotal)) {
-                console.log('foo !== parseFloat(cart.subtotal)');
+            // If cartProductTotalTruncated doesn't equal cart.subtotal after rounding cartProductTotalTruncated,
+            // try cart.subtotal.toFixed(1) and if it === cartProductTotalTruncated
+            if (cartProductTotalTruncated !== parseFloat(cart.subtotal)) {
+                console.log('cartProductTotalTruncated !== parseFloat(cart.subtotal)');
                 console.log('attempting to round subtotal:');
                 console.log(`parseFloat(cart.subtotal).toFixed(1) = ${parseFloat(cart.subtotal).toFixed(1)}`);
-                console.log(`foo = ${foo}`);
+                console.log(`cartProductTotalTruncated = ${cartProductTotalTruncated}`);
 
-                // if foo === cart.subtotal, set cart.subtotal.toFixed(1)
-                if (foo === cart.subtotal.toFixed(1)) {
-                    console.log("foo === cart.subtotal.toFixed(1)");
+                // if cartProductTotalTruncated === cart.subtotal, set cart.subtotal.toFixed(1)
+                if (cartProductTotalTruncated === cart.subtotal.toFixed(1)) {
+                    console.log("cartProductTotalTruncated === cart.subtotal.toFixed(1)");
                     cart.subtotal = cart.subtotal.toFixed(1);
                 }
             }
         }
 
         console.log(`cart.subtotal = ${cart.subtotal}`);
-        console.log(`foo = ${foo}`);
+        console.log(`cartProductTotalTruncated = ${cartProductTotalTruncated}`);
         console.log(`(finalPrice * quantity) = ${(finalPrice * quantity)}`);
         console.log(`cart.subtotal = ${cart.subtotal}`);
 
-        // DELETED LAST PRODUCT IN CART
+        // DELETING LAST PRODUCT IN CART...
         // If subtotal still has a value AND that value is equal to finalPrice * quantity
-        if (parseFloat(cart.subtotal) > foo && (finalPrice * quantity) === parseFloat(cart.subtotal)) {
-            // Set foo = finalPrice * quantity
-            console.log(`setting foo = finalPrice * quantity = $${foo = finalPrice * quantity}`);
-            foo = finalPrice * quantity;
+        if (parseFloat(cart.subtotal) > cartProductTotalTruncated && (finalPrice * quantity) === parseFloat(cart.subtotal)) {
+            // Set cartProductTotalTruncated = finalPrice * quantity
+            console.log(`setting cartProductTotalTruncated = finalPrice * quantity = $${cartProductTotalTruncated = finalPrice * quantity}`);
+            cartProductTotalTruncated = finalPrice * quantity;
         }
 
-        // DELETED A PRODUCT FROM THE CART
+        // DELETING A PRODUCT FROM THE CART...
         // If subtotal still has a value AND that value is NOT equal to finalPrice * quantity
-        if (parseFloat(cart.subtotal) > foo && (finalPrice * quantity) !== parseFloat(cart.subtotal)) {
+        if (parseFloat(cart.subtotal) > cartProductTotalTruncated && (finalPrice * quantity) !== parseFloat(cart.subtotal)) {
             console.log('!! TEST !!');
-            // Set foo ??
-            foo = finalPrice * quantity;
+            // Set cartProductTotalTruncated ??
+            cartProductTotalTruncated = finalPrice * quantity;
             if (cart.num_items === 1) {
                 console.log("!! CART IS EMPTY(?) !!");
             }
         }
 
-        const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(foo);
+        const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(cartProductTotalTruncated);
         const updatedTaxes = updatedSubtotal * 0.13;
-        const updatedTotal = updatedSubtotal + updatedTaxes;
+        
+        // Calculate the total
+        // *The postgresql db rounds decimal values to 2 decimal places when entered into the db.
+        // 'updatedSubtotal' and 'updatedTaxes' are added to the db as decimals and then rounded automatically by postgres.
+        // The 'total' value we add to the db is calculated using the rounded values of 'updatedSubtotal' and 'updatedTaxes',
+        // which is how 'updatedSubtotal' and 'updatedTaxes' appear in the db.
+        const total = parseFloat(updatedSubtotal.toFixed(2)) + parseFloat(updatedTaxes.toFixed(2));
 
-        console.log(`parseFloat(cart.subtotal) = ${parseFloat(cart.subtotal)}`)
-        console.log(`(finalPrice * quantity) = ${finalPrice * quantity}`)
-        console.log(`Math.floor() method:  = ${foo}`)
+        console.log('====================================')
+        console.log(`parseFloat(updatedSubtotal.toFixed(2)) = ${parseFloat(updatedSubtotal.toFixed(2))}`)
+        console.log(`parseFloat(updatedTaxes.toFixed(2)) = ${parseFloat(updatedTaxes.toFixed(2))}`)
         console.log(`updatedSubtotal = ${updatedSubtotal}`)
         console.log(`updatedTaxes = ${updatedTaxes}`)
-        console.log(`updatedTotal = ${updatedTotal}`)
+        console.log(`total = ${total}`)
         console.log(`quantity = ${quantity}`)
+        console.log('====================================')
 
         // Decrement num_items in the user's cart and update the subtotal, taxes and total  
         await prisma.cart.update({
@@ -378,7 +397,7 @@ async function deleteProductFromCart(cartId, productId) {
             data: {
                 subtotal: updatedSubtotal,
                 taxes: updatedTaxes,
-                total: updatedTotal,
+                total: total,
                 num_items: {
                     decrement: quantity
                 }
