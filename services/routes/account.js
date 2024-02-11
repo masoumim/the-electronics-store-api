@@ -69,7 +69,7 @@ router.get('/account/primary-address', async (req, res) => {
         const foundPrimaryAddress = await requests.getAddressByType(req.user.id, "shipping_primary");
 
         // Send 404 response if primary address not in db
-        if(!foundPrimaryAddress) return res.status(404).json("Primary shipping address not found");
+        if (!foundPrimaryAddress) return res.status(404).json("Primary shipping address not found");
 
         // Send primary address in response
         res.status(200).json(foundPrimaryAddress);
@@ -128,56 +128,73 @@ router.get('/account/primary-address', async (req, res) => {
  *               Error creating address               
  */
 router.post('/account/primary-address', userCheck, async (req, res) => {
-    try {                                        
+    try {
         // Check if user has a primary shipping address already
         const foundPrimaryAddress = await requests.getAddressByType(req.user.id, "shipping_primary");
-        if(foundPrimaryAddress) return res.status(400).json("Primary shipping address already exists");
+        if (foundPrimaryAddress) return res.status(400).json("Primary shipping address already exists");
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
+        const requiredData = ['firstName', 'lastName', 'streetNumber', 'streetName', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
-                
+
         // Validate user input                
         const validationArray = [];
+
+        // First Name
         validationArray.push(validator.isAlpha(req.body.firstName));
         validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
+        // Last Name
         validationArray.push(validator.isAlpha(req.body.lastName));
         validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
-        validationArray.push(validator.isLength(req.body.address, { min: 1, max: 50 }));
+        // Street Number
+        validationArray.push(validator.isInt(req.body.streetNumber, { min: 1, max: 99999 }));
+        // Street Name
+        validationArray.push(validator.isAlpha(req.body.streetName, "en-US", { ignore: " " }));
+        validationArray.push(validator.isLength(req.body.streetName, { min: 1, max: 50 }));
+        // City
         validationArray.push(validator.isAlpha(req.body.city));
         validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.province));
-        validationArray.push(validator.isLength(req.body.province, { min: 1, max: 50 }));
+        // Country
         validationArray.push(validator.isAlpha(req.body.country));
         validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
+        // Postal Code
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
-        validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
-                                            
+        // Phone Number
+        validationArray.push(validator.isNumeric(req.body.phoneNumber));
+        validationArray.push(validator.isLength(req.body.phoneNumber, { min: 10, max: 10 }));
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
-        
+
+        // Concatenate 'Street Number' and 'Street Address' into a single string called 'address'
+        const addressConcat = req.body.streetNumber + " " + req.body.streetName;
+
+        // Province code to upper case
+        let provinceCode = req.body.province;
+        provinceCode = provinceCode.toUpperCase();
+
         // Get the address info from the request body
         const address = {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
-            address: req.body.address,
-            unit: req.body.unit,
+            address: addressConcat,
             city: req.body.city,
-            province: req.body.province,
+            unit: req.body.unit,
+            province: provinceCode,
             country: req.body.country,
             postalCode: req.body.postalCode,
             phoneNumber: req.body.phoneNumber,
             addressType: "shipping_primary",
             userId: req.user.id
         }
-                
+
         // Add the address
         await requests.addAddress(address);
-                                        
+
         res.status(201).json("Primary shipping address created");
     } catch (error) {
         res.status(500).json(error);
@@ -233,18 +250,18 @@ router.post('/account/primary-address', userCheck, async (req, res) => {
  *             example:
  *               Error updating address               
  */
-router.put('/account/primary-address', userCheck, async (req, res) => {    
-    try {                                                                                
+router.put('/account/primary-address', userCheck, async (req, res) => {
+    try {
         // Check if there is a primary address to update
         const foundPrimaryAddress = await requests.getAddressByType(req.user.id, "shipping_primary");
-        if(!foundPrimaryAddress) return res.status(400).json("No primary address found");
+        if (!foundPrimaryAddress) return res.status(400).json("No primary address found");
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
         const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
-                                        
+
         // Validate user input                
         const validationArray = [];
         validationArray.push(validator.isAlpha(req.body.firstName));
@@ -261,11 +278,11 @@ router.put('/account/primary-address', userCheck, async (req, res) => {
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
         validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
-                                            
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
-        
+
         // Get the address info from the request body
         const address = {
             firstName: req.body.firstName,
@@ -281,7 +298,7 @@ router.put('/account/primary-address', userCheck, async (req, res) => {
 
         // Update address
         await requests.updateAddress(foundPrimaryAddress.id, req.user.id, address);
-                                
+
         res.status(200).json("Address successfully updated");
     } catch (error) {
         res.status(500).json(error);
@@ -328,7 +345,7 @@ router.get('/account/billing-address', async (req, res) => {
         const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
 
         // Send 404 response if billing address not in db
-        if(!foundBillingAddress) return res.status(404).json("Billing address not found");
+        if (!foundBillingAddress) return res.status(404).json("Billing address not found");
 
         // Send billing address in response
         res.status(200).json(foundBillingAddress);
@@ -386,17 +403,17 @@ router.get('/account/billing-address', async (req, res) => {
  *               Error creating billing address               
  */
 router.post('/account/billing-address', userCheck, async (req, res) => {
-    try {                                        
+    try {
         // Check if user has a billing address already
         const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
-        if(foundBillingAddress) return res.status(400).json("Billing address already exists");
+        if (foundBillingAddress) return res.status(400).json("Billing address already exists");
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
         const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
-                
+
         // Validate user input                
         const validationArray = [];
         validationArray.push(validator.isAlpha(req.body.firstName));
@@ -413,11 +430,11 @@ router.post('/account/billing-address', userCheck, async (req, res) => {
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
         validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
-                                            
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
-        
+
         // Get the address info from the request body
         const address = {
             firstName: req.body.firstName,
@@ -432,10 +449,10 @@ router.post('/account/billing-address', userCheck, async (req, res) => {
             addressType: "billing",
             userId: req.user.id
         }
-                
+
         // Add the billing address
         await requests.addAddress(address);
-                                        
+
         res.status(201).json("Billing Address successfully created");
     } catch (error) {
         res.status(500).json(error);
@@ -490,18 +507,18 @@ router.post('/account/billing-address', userCheck, async (req, res) => {
  *             example:
  *               Error updating billing address               
  */
-router.put('/account/billing-address', userCheck, async (req, res) => {    
-    try {                                                                                
+router.put('/account/billing-address', userCheck, async (req, res) => {
+    try {
         // Check if there is a billing address to update
         const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
-        if(!foundBillingAddress) return res.status(400).json("No billing address found");
+        if (!foundBillingAddress) return res.status(400).json("No billing address found");
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
         const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
-                                        
+
         // Validate user input                
         const validationArray = [];
         validationArray.push(validator.isAlpha(req.body.firstName));
@@ -518,11 +535,11 @@ router.put('/account/billing-address', userCheck, async (req, res) => {
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
         validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
-                                            
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
-        
+
         // Get the billing address info from the request body
         const address = {
             firstName: req.body.firstName,
@@ -538,7 +555,7 @@ router.put('/account/billing-address', userCheck, async (req, res) => {
 
         // Update billing address
         await requests.updateAddress(foundBillingAddress.id, req.user.id, address);
-                                
+
         res.status(200).json("Billing address successfully updated");
     } catch (error) {
         res.status(500).json(error);
@@ -577,7 +594,7 @@ router.delete('/account/billing-address', async (req, res) => {
         const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
 
         // Send 404 response if billing address not in db
-        if(!foundBillingAddress) return res.status(404).json("Billing address not found");
+        if (!foundBillingAddress) return res.status(404).json("Billing address not found");
 
         // Delete the billing address
         await requests.deleteAddress(foundBillingAddress.id);
@@ -633,19 +650,19 @@ router.delete('/account/billing-address', async (req, res) => {
  *               Error updating user               
  */
 router.post('/account/change-password', userCheck, async (req, res) => {
-    try {                
+    try {
         // Check if the request body has any missing data
         if (!req.body.currentPassword || !req.body.newPassword || !req.body.newPasswordConfirm) return res.status(400).json("Password change failed. Required info is missing.");
-                
+
         // Confirm current password matches password in DB
-        const user = await requests.getUserById(req.user.id);            
-        const matchedPassword = await bcrypt.compare(req.body.currentPassword, user.password);                
-        if(!matchedPassword) return res.status(400).json("Incorrect Password");
-                
+        const user = await requests.getUserById(req.user.id);
+        const matchedPassword = await bcrypt.compare(req.body.currentPassword, user.password);
+        if (!matchedPassword) return res.status(400).json("Incorrect Password");
+
         // Validate user input:
         const strongPassword = validator.isStrongPassword(req.body.newPassword, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 });
-        if(!strongPassword) return res.status(400).json("New password is invalid");
-        if(req.body.newPassword !== req.body.newPasswordConfirm) return res.status(400).json("Passwords don't match");
+        if (!strongPassword) return res.status(400).json("New password is invalid");
+        if (req.body.newPassword !== req.body.newPasswordConfirm) return res.status(400).json("Passwords don't match");
 
         // Encrypt new password        
         // Generate salt with 10 Salt Rounds
@@ -653,7 +670,7 @@ router.post('/account/change-password', userCheck, async (req, res) => {
 
         // Hash password
         const hashedPassword = await bcrypt.hash(req.body.newPassword, salt);
-                                
+
         // Update user password in db
         await requests.updateUserPassword(req.user.id, hashedPassword);
 
@@ -711,17 +728,17 @@ router.post('/account/change-password', userCheck, async (req, res) => {
  */
 router.post('/account/payment-card', userCheck, async (req, res) => {
     try {
-        
+
         // Check if user already has payment card saved
         const foundPaymentCard = await requests.getPaymentCard(req.user.id);
-        if(foundPaymentCard) return res.status(400).json("User already has payment card");
-        
+        if (foundPaymentCard) return res.status(400).json("User already has payment card");
+
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['cardNumber', 'firstName', 'lastName', 'securityCode', 'expirationMonth', 'expirationYear'];        
-        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });                
-        if(!hasData) return res.status(400).json("Request Body is missing required data");
-                                                
+        const requiredData = ['cardNumber', 'firstName', 'lastName', 'securityCode', 'expirationMonth', 'expirationYear'];
+        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
+        if (!hasData) return res.status(400).json("Request Body is missing required data");
+
         // Validate input                              
         const validationArray = [];
         validationArray.push(validator.isCreditCard(req.body.cardNumber));
@@ -735,18 +752,18 @@ router.post('/account/payment-card', userCheck, async (req, res) => {
         validationArray.push(validator.isLength(req.body.expirationMonth, { min: 2, max: 2 }));
         validationArray.push(validator.isNumeric(req.body.expirationYear));
         validationArray.push(validator.isLength(req.body.expirationYear, { min: 2, max: 2 }));
-        
+
         // Check expiration date validity
         const currentMonth = timestamp('MM');
         const currentYear = timestamp('YYYY').slice(2, 4);
         let invalidExpiration = false;
-        if(parseInt(req.body.expirationYear) < parseInt(currentYear)) invalidExpiration = true;
+        if (parseInt(req.body.expirationYear) < parseInt(currentYear)) invalidExpiration = true;
         if ((parseInt(req.body.expirationYear) === parseInt(currentYear)) && parseInt(req.body.expirationMonth) <= parseInt(currentMonth)) invalidExpiration = true;
-                        
+
         // Check if any element in array is false || the expiration date is invalid
         const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput || invalidExpiration) return res.status(400).json("Invalid Request Body Data");
-                
+
         // Get the payment card info from the request body
         const paymentCard = {
             cardNumber: req.body.cardNumber,
@@ -756,9 +773,9 @@ router.post('/account/payment-card', userCheck, async (req, res) => {
             expirationMonth: req.body.expirationMonth,
             expirationYear: req.body.expirationYear,
             paymentCardType: "payment",
-            userId: req.user.id            
+            userId: req.user.id
         }
-        
+
         // Save payment card to DB
         await requests.addPaymentCard(paymentCard);
 
@@ -816,17 +833,17 @@ router.post('/account/payment-card', userCheck, async (req, res) => {
  */
 router.put('/account/payment-card', userCheck, async (req, res) => {
     try {
-        
+
         // Check if user has payment card to updated
         const foundPaymentCard = await requests.getPaymentCard(req.user.id);
-        if(!foundPaymentCard) return res.status(400).json("User does not have payment card");
-        
+        if (!foundPaymentCard) return res.status(400).json("User does not have payment card");
+
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['cardNumber', 'firstName', 'lastName', 'securityCode', 'expirationMonth', 'expirationYear'];        
-        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });                
-        if(!hasData) return res.status(400).json("Request Body is missing required data");
-                                                
+        const requiredData = ['cardNumber', 'firstName', 'lastName', 'securityCode', 'expirationMonth', 'expirationYear'];
+        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
+        if (!hasData) return res.status(400).json("Request Body is missing required data");
+
         // Validate input                              
         const validationArray = [];
         validationArray.push(validator.isCreditCard(req.body.cardNumber));
@@ -840,18 +857,18 @@ router.put('/account/payment-card', userCheck, async (req, res) => {
         validationArray.push(validator.isLength(req.body.expirationMonth, { min: 2, max: 2 }));
         validationArray.push(validator.isNumeric(req.body.expirationYear));
         validationArray.push(validator.isLength(req.body.expirationYear, { min: 2, max: 2 }));
-        
+
         // Check expiration date validity
         const currentMonth = timestamp('MM');
         const currentYear = timestamp('YYYY').slice(2, 4);
         let invalidExpiration = false;
-        if(parseInt(req.body.expirationYear) < parseInt(currentYear)) invalidExpiration = true;
+        if (parseInt(req.body.expirationYear) < parseInt(currentYear)) invalidExpiration = true;
         if ((parseInt(req.body.expirationYear) === parseInt(currentYear)) && parseInt(req.body.expirationMonth) <= parseInt(currentMonth)) invalidExpiration = true;
-                        
+
         // Check if any element in array is false || the expiration date is invalid
         const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput || invalidExpiration) return res.status(400).json("Invalid Request Body Data");
-                
+
         // Get the payment card info from the request body
         const paymentCard = {
             cardNumber: req.body.cardNumber,
@@ -859,9 +876,9 @@ router.put('/account/payment-card', userCheck, async (req, res) => {
             lastName: req.body.lastName,
             securityCode: req.body.securityCode,
             expirationMonth: req.body.expirationMonth,
-            expirationYear: req.body.expirationYear                      
+            expirationYear: req.body.expirationYear
         }
-        
+
         // Update the payment card to DB
         await requests.updatePaymentCard(foundPaymentCard.id, req.user.id, paymentCard);
 
@@ -910,7 +927,7 @@ router.get('/account/payment-card', async (req, res) => {
         const paymentCard = await requests.getPaymentCard(req.user.id);
 
         // Send 404 response if payment card not in db
-        if(!paymentCard) return res.status(404).json("Payment card not found");
+        if (!paymentCard) return res.status(404).json("Payment card not found");
 
         // Send payment card object in response
         res.status(200).json(paymentCard);
@@ -951,7 +968,7 @@ router.delete('/account/payment-card', async (req, res) => {
         const paymentCard = await requests.getPaymentCard(req.user.id);
 
         // Send 404 response if payment card not in db
-        if(!paymentCard) return res.status(404).json("Payment card not found");
+        if (!paymentCard) return res.status(404).json("Payment card not found");
 
         // Delete the payment card
         await requests.deletePaymentCard(paymentCard.id, req.user.id);
