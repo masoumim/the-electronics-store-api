@@ -50,12 +50,6 @@ module.exports = router
  *               country: Canada
  *               postalCode: X1Y2Z3
  *               phoneNumber: "5551234567"
- *       404:
- *         description: Not Found
- *         content:
- *           application/json:
- *             example:
- *               Primary shipping address not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -68,8 +62,8 @@ router.get('/account/primary-address', async (req, res) => {
         // Get primary address from the db
         const foundPrimaryAddress = await requests.getAddressByType(req.user.id, "shipping_primary");
 
-        // Send 404 response if primary address not in db
-        if (!foundPrimaryAddress) return res.status(404).json("Primary shipping address not found");
+        // Return false if no primary address is found
+        if (!foundPrimaryAddress) return false;
 
         // Send primary address in response
         res.status(200).json(foundPrimaryAddress);
