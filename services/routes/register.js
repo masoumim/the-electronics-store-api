@@ -81,7 +81,7 @@ router.post('/register', async (req, res) => {
         validationArray.push(validator.isLength(newUser.first_name, { min: 1, max: 50 }));
         validationArray.push(validator.isAlpha(newUser.last_name));
         validationArray.push(validator.isLength(newUser.last_name, { min: 1, max: 50 }));
-        validationArray.push(validator.isEmail(newUser.email));        
+        validationArray.push(validator.isEmail(newUser.email));
 
         // Check if any element in array is false
         const foundInvalidInput = validationArray.some((e) => { return e === false });
@@ -90,14 +90,17 @@ router.post('/register', async (req, res) => {
         // Check if a user with that email already exists in the db
         const userCheck = await requests.getUserByEmail(newUser.email);
 
-        if (!userCheck) {                        
+        if (!userCheck) {
             // Create new user on Postgresql:
             const createdUserPG = await requests.addUser(newUser.first_name, newUser.last_name, newUser.email, newUser.uid);
 
             // If a user is successfully created, create a new Cart for that user in the DB.
             if (createdUserPG) {
-                requests.addCart(createdUserPG.id);                
-            }         
+                requests.addCart(createdUserPG.id);
+
+                // Add the 'id' property to the the newUser object
+                newUser.id = createdUserPG.id;
+            }
         }
         else {
             res.status(409).json("Registration failed. User with that email address already exists.");
