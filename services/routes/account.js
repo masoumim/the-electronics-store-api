@@ -348,15 +348,15 @@ router.put('/account/primary-address', userCheck, async (req, res) => {
  *               Error retrieving billing address
  */
 router.get('/account/billing-address', async (req, res) => {
+
     try {
-        // Get billing address from the db
-        const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
-
-        // Send 404 response if billing address not in db
-        if (!foundBillingAddress) return res.status(404).json("Billing address not found");
-
-        // Send billing address in response
-        res.status(200).json(foundBillingAddress);
+        if (req.user && req.user.id) {
+            // Get billing address from the db and return it in response
+            const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
+            res.status(200).json(foundBillingAddress);
+        } else {
+            res.status(200).json(null);
+        }
     } catch (error) {
         res.status(500).json(error);
     }
@@ -411,57 +411,77 @@ router.get('/account/billing-address', async (req, res) => {
  *               Error creating billing address               
  */
 router.post('/account/billing-address', userCheck, async (req, res) => {
+
     try {
-        // Check if user has a billing address already
-        const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
-        if (foundBillingAddress) return res.status(400).json("Billing address already exists");
+        if (req.user && req.user.id) {
+            // Check if user has a billing address already
+            const foundBillingAddress = await requests.getAddressByType(req.user.id, "billing");
 
-        // Check that request body isn't missing data        
-        const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
-        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
-        if (!hasData) return res.status(400).json("Request Body is missing required data");
+            if (foundBillingAddress) {
+                return res.status(400).json("Billing address already exists");
+            }
+            else {
+                // Check that request body isn't missing data        
+                const reqBodyKeys = Object.keys(req.body);
+                const requiredData = ['firstName', 'lastName', 'streetNumber', 'streetName', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
+                const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
+                if (!hasData) return res.status(400).json("Request Body is missing required data");
 
-        // Validate user input                
-        const validationArray = [];
-        validationArray.push(validator.isAlpha(req.body.firstName));
-        validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.lastName));
-        validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
-        validationArray.push(validator.isLength(req.body.address, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.city));
-        validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.province));
-        validationArray.push(validator.isLength(req.body.province, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.country));
-        validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlphanumeric(req.body.postalCode));
-        validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
-        validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
+                // Validate user input                
+                const validationArray = [];
 
-        // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });
-        if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
+                // First Name
+                validationArray.push(validator.isAlpha(req.body.firstName));
+                validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
+                // Last Name
+                validationArray.push(validator.isAlpha(req.body.lastName));
+                validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
+                // Street Number
+                validationArray.push(validator.isInt(req.body.streetNumber, { min: 1, max: 99999 }));
+                // Street Name
+                validationArray.push(validator.isAlpha(req.body.streetName, "en-US", { ignore: " " }));
+                validationArray.push(validator.isLength(req.body.streetName, { min: 1, max: 50 }));
+                // City
+                validationArray.push(validator.isAlpha(req.body.city));
+                validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
+                // Country
+                validationArray.push(validator.isAlpha(req.body.country));
+                validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
+                // Postal Code
+                validationArray.push(validator.isAlphanumeric(req.body.postalCode));
+                validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
+                // Phone Number
+                validationArray.push(validator.isNumeric(req.body.phoneNumber));
+                validationArray.push(validator.isLength(req.body.phoneNumber, { min: 10, max: 10 }));
 
-        // Get the address info from the request body
-        const address = {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            address: req.body.address,
-            unit: req.body.unit,
-            city: req.body.city,
-            province: req.body.province,
-            country: req.body.country,
-            postalCode: req.body.postalCode,
-            phoneNumber: req.body.phoneNumber,
-            addressType: "billing",
-            userId: req.user.id
+                // Check if any element in array is false
+                const foundInvalidInput = validationArray.some((e) => { return e === false });
+                if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
+
+                // Concatenate 'Street Number' and 'Street Address' into a single string called 'address'
+                const addressConcat = req.body.streetNumber + " " + req.body.streetName;
+
+                // Get the address info from the request body
+                const address = {
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName,
+                    address: addressConcat,
+                    city: req.body.city,
+                    unit: req.body.unit,
+                    province: req.body.province,
+                    country: req.body.country,
+                    postalCode: req.body.postalCode,
+                    phoneNumber: req.body.phoneNumber,
+                    addressType: "billing",
+                    userId: req.user.id
+                }
+                // Add the address
+                await requests.addAddress(address);
+                res.status(201).json("Billing Address successfully created");
+            }
+        } else {
+            return res.status(401).json("User not logged in");
         }
-
-        // Add the billing address
-        await requests.addAddress(address);
-
-        res.status(201).json("Billing Address successfully created");
     } catch (error) {
         res.status(500).json(error);
     }
@@ -523,36 +543,49 @@ router.put('/account/billing-address', userCheck, async (req, res) => {
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
+        const requiredData = ['firstName', 'lastName', 'streetNumber', 'streetName', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
 
         // Validate user input                
         const validationArray = [];
+
+        // First Name
         validationArray.push(validator.isAlpha(req.body.firstName));
         validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
+        // Last Name
         validationArray.push(validator.isAlpha(req.body.lastName));
         validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
-        validationArray.push(validator.isLength(req.body.address, { min: 1, max: 50 }));
+        // Street Number
+        validationArray.push(validator.isInt(req.body.streetNumber, { min: 1, max: 99999 }));
+        // Street Name
+        validationArray.push(validator.isAlpha(req.body.streetName, "en-US", { ignore: " " }));
+        validationArray.push(validator.isLength(req.body.streetName, { min: 1, max: 50 }));
+        // City
         validationArray.push(validator.isAlpha(req.body.city));
         validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.province));
-        validationArray.push(validator.isLength(req.body.province, { min: 1, max: 50 }));
+        // Country
         validationArray.push(validator.isAlpha(req.body.country));
         validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
+        // Postal Code
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
-        validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
+        // Phone Number
+        validationArray.push(validator.isNumeric(req.body.phoneNumber));
+        validationArray.push(validator.isLength(req.body.phoneNumber, { min: 10, max: 10 }));
 
         // Check if any element in array is false
         const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
 
-        // Get the billing address info from the request body
+        // Concatenate 'Street Number' and 'Street Address' into a single string called 'address'
+        const addressConcat = req.body.streetNumber + " " + req.body.streetName;
+
+        // Get the address info from the request body
         const address = {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
-            address: req.body.address,
+            address: addressConcat,
             unit: req.body.unit,
             city: req.body.city,
             province: req.body.province,
@@ -561,10 +594,10 @@ router.put('/account/billing-address', userCheck, async (req, res) => {
             phoneNumber: req.body.phoneNumber,
         }
 
-        // Update billing address
+        // Update address
         await requests.updateAddress(foundBillingAddress.id, req.user.id, address);
 
-        res.status(200).json("Billing address successfully updated");
+        res.status(200).json("Address successfully updated");
     } catch (error) {
         res.status(500).json(error);
     }
