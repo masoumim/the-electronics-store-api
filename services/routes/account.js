@@ -646,6 +646,8 @@ router.delete('/account/billing-address', async (req, res) => {
     }
 });
 
+
+// TODO: Delete this
 /**
  * @swagger
  * /account/change-password:
