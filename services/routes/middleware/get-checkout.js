@@ -3,7 +3,7 @@
 // Require in the requests module
 const requests = require("../../requests.js");
 
-async function getCheckout(req, res, next){    
+async function getCheckout(req, res, next) {
     // Get the checkout session from the db
     const foundCheckout = await requests.getCheckout(req.user.id);
 
