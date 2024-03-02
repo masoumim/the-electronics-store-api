@@ -684,7 +684,7 @@ router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req
 router.get('/checkout/shipping/alt-address', userCheck, async (req, res) => {
     try {        
         // Get the alternate address
-        const foundAddress = await requests.getAddressByType(req.user.id, "alternate_address");
+        const foundAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
 
         // Check if alternate address was found
         if(!foundAddress) return res.status(404).json("Alternate address not found");
