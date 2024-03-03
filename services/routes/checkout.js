@@ -103,15 +103,15 @@ module.exports = router
 router.post('/checkout', userCheck, getCart, async (req, res) => {
     try {
         // Check if user's cart is empty
-        if(req.cart.num_items === 0) return res.status(400).json("Cart is empty");
+        if (req.cart.num_items === 0) return res.status(400).json("Cart is empty");
 
         // Check if user already has a checkout session        
         const foundCheckout = await requests.getCheckout(req.user.id);
-        if(foundCheckout) return res.status(400).json("User already has items in checkout");
-        
+        if (foundCheckout) return res.status(400).json("User already has items in checkout");
+
         // Create a new checkout session in the DB        
         await requests.addCheckout(req.user.id, req.cart);
-                                
+
         res.status(200).json("Checkout session successfully created");
     } catch (error) {
         res.status(500).json(error);
@@ -222,44 +222,57 @@ router.get('/checkout', userCheck, getCheckout, async (req, res) => {
  *             example:
  *               Error updating address               
  */
-router.put('/checkout/shipping/update-alt-address', userCheck, getCheckout, async (req, res) => {    
-    try {                                                                                
+router.put('/checkout/shipping/update-alt-address', userCheck, getCheckout, async (req, res) => {
+    try {
         // Check if there is an alternate shipping address to update
         const foundAltShippingAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
-        if(!foundAltShippingAddress) return res.status(400).json("No alternate shipping address found");
+        if (!foundAltShippingAddress) return res.status(400).json("No alternate shipping address found");
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
+        const requiredData = ['firstName', 'lastName', 'streetNumber', 'streetName', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
-                                        
+
         // Validate user input                
         const validationArray = [];
+
+        // First Name
         validationArray.push(validator.isAlpha(req.body.firstName));
         validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
+        // Last Name
         validationArray.push(validator.isAlpha(req.body.lastName));
         validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
-        validationArray.push(validator.isLength(req.body.address, { min: 1, max: 50 }));
+        // Street Number
+        validationArray.push(validator.isInt(req.body.streetNumber, { min: 1, max: 99999 }));
+        // Street Name
+        validationArray.push(validator.isAlpha(req.body.streetName, "en-US", { ignore: " " }));
+        validationArray.push(validator.isLength(req.body.streetName, { min: 1, max: 50 }));
+        // City
         validationArray.push(validator.isAlpha(req.body.city));
         validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.province));
-        validationArray.push(validator.isLength(req.body.province, { min: 1, max: 50 }));
+        // Country
         validationArray.push(validator.isAlpha(req.body.country));
         validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
+        // Postal Code
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
-        validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
-                                            
+        // Phone Number
+        validationArray.push(validator.isNumeric(req.body.phoneNumber));
+        validationArray.push(validator.isLength(req.body.phoneNumber, { min: 10, max: 10 }));
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
-        
-        // Get the address info from the request body
+
+        // Concatenate 'Street Number' and 'Street Address' into a single string called 'address'
+        const addressConcat = req.body.streetNumber + " " + req.body.streetName;
+
+        // Get the address info from the request body and use it to set the Alternate Shipping Address
         const altAddress = {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
-            address: req.body.address,
+            address: addressConcat,
             unit: req.body.unit,
             city: req.body.city,
             province: req.body.province,
@@ -270,7 +283,7 @@ router.put('/checkout/shipping/update-alt-address', userCheck, getCheckout, asyn
 
         // Update address
         await requests.updateAddress(foundAltShippingAddress.id, req.user.id, altAddress);
-                                
+
         res.status(200).json("Address successfully updated");
     } catch (error) {
         res.status(500).json(error);
@@ -325,11 +338,11 @@ router.put('/checkout/shipping/update-alt-address', userCheck, getCheckout, asyn
  *               Error updating session shipping info
  */
 router.put('/checkout/shipping/:addressId', userCheck, getCheckout, async (req, res) => {
-    try {        
+    try {
         // Check if address exists
         const foundAddress = await requests.getAddressById(req.user.id, parseInt(req.params.addressId));
         if (!foundAddress) return res.status(400).json("Address not found");
-                
+
         // Check that the address is a shipping address (primary or alternative)
         if (foundAddress.address_type === "shipping_primary" || foundAddress.address_type === "shipping_alternate") {
             await requests.updateCheckoutShipping(req.user.id, parseInt(req.params.addressId));
@@ -391,11 +404,11 @@ router.put('/checkout/shipping/:addressId', userCheck, getCheckout, async (req, 
  *               Error updating session billing address info
  */
 router.put('/checkout/payment/billing/:addressId', userCheck, getCheckout, async (req, res) => {
-    try {        
+    try {
         // Check if address exists
         const foundAddress = await requests.getAddressById(req.user.id, parseInt(req.params.addressId));
         if (!foundAddress) return res.status(400).json("Address not found");
-                
+
         // Check that the address is a either a primary or billing address
         if (foundAddress.address_type === "shipping_primary" || foundAddress.address_type === "billing") {
             await requests.updateCheckoutBilling(req.user.id, parseInt(req.params.addressId));
@@ -448,11 +461,11 @@ router.put('/checkout/payment/billing/:addressId', userCheck, getCheckout, async
  *               Error updating session payment card
  */
 router.put('/checkout/payment/payment-card', userCheck, getCheckout, async (req, res) => {
-    try {        
+    try {
         // Check if payment card exists
         const foundPaymentCard = await requests.getPaymentCard(req.user.id);
         if (!foundPaymentCard) return res.status(400).json("Payment card not found");
-                
+
         // Update checkout session payment card id
         await requests.updateCheckoutPaymentCard(req.user.id, foundPaymentCard.id);
 
@@ -513,12 +526,12 @@ router.put('/checkout/payment/payment-card', userCheck, getCheckout, async (req,
  *             example:
  *               Error updating session stage
  */
-router.put('/checkout/stage/:stageName', userCheck, getCheckout, async (req, res) => {
-    try {        
+router.put('/checkout/stage/stage-name', userCheck, getCheckout, async (req, res) => {
+    try {
         // Check if stage name parameter is valid
-        const stages = ["shipping", "payment", "review", "confirmation"];                
-        if(!stages.includes(req.params.stageName)) return res.status(400).json("Invalid stage name");
-                
+        const stages = ["shipping", "payment", "review", "confirmation"];
+        if (!stages.includes(req.params.stageName)) return res.status(400).json("Invalid stage name");
+
         // Update checkout session stage
         await requests.updateCheckoutStage(req.user.id, req.params.stageName);
 
@@ -584,17 +597,17 @@ router.put('/checkout/stage/:stageName', userCheck, getCheckout, async (req, res
  *               Error creating address               
  */
 router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req, res) => {
-    try {                                                        
+    try {
         // Check if user has an alternate shipping address already
         const foundAltShippingAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
-        if(foundAltShippingAddress) return res.status(400).json("Alternate shipping address already exists");
+        if (foundAltShippingAddress) return res.status(400).json("Alternate shipping address already exists");
 
         // Check that request body isn't missing data        
         const reqBodyKeys = Object.keys(req.body);
         const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
         const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
         if (!hasData) return res.status(400).json("Request Body is missing required data");
-                
+
         // Validate user input                
         const validationArray = [];
         validationArray.push(validator.isAlpha(req.body.firstName));
@@ -611,11 +624,11 @@ router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req
         validationArray.push(validator.isAlphanumeric(req.body.postalCode));
         validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
         validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
-                                            
+
         // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });        
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
         if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
-        
+
         // Get the address info from the request body
         const altAddress = {
             firstName: req.body.firstName,
@@ -630,10 +643,10 @@ router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req
             addressType: "shipping_alternate",
             userId: req.user.id
         }
-        
+
         // Add the address
         await requests.addAddress(altAddress);
-                                        
+
         res.status(200).json("Alternate shipping address created");
     } catch (error) {
         res.status(500).json(error);
@@ -682,13 +695,13 @@ router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req
  *               Error retrieving alternate address               
  */
 router.get('/checkout/shipping/alt-address', userCheck, async (req, res) => {
-    try {        
+    try {
         // Get the alternate address
         const foundAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
 
         // Check if alternate address was found
-        if(!foundAddress) return res.status(404).json("Alternate address not found");
-        
+        if (!foundAddress) return res.status(404).json("Alternate address not found");
+
         // Send alternate address in response
         res.status(200).json(foundAddress);
     } catch (error) {

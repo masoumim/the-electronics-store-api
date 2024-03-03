@@ -291,7 +291,7 @@ router.put('/account/primary-address', userCheck, async (req, res) => {
         // Concatenate 'Street Number' and 'Street Address' into a single string called 'address'
         const addressConcat = req.body.streetNumber + " " + req.body.streetName;
 
-        // Get the address info from the request body
+        // Get the address info from the request body and use it to set the Primary Shipping Address
         const address = {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
