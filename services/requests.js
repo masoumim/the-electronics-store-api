@@ -449,6 +449,27 @@ async function deleteCheckout(userId) {
     })
 }
 
+// ADD CHECKOUT SESSION SHIPPING ADDRESS
+async function addCheckoutSessionShippingAddress(addressObj) {
+    const address = await prisma.address.create({
+        data: {
+            first_name: addressObj.firstName,
+            last_name: addressObj.lastName,
+            address: addressObj.address,
+            unit: addressObj.unit,
+            city: addressObj.city,
+            province: addressObj.province,
+            country: addressObj.country,
+            postal_code: addressObj.postalCode,
+            phone_number: addressObj.phoneNumber,
+            address_type: addressObj.addressType,
+            user_id: addressObj.userId
+        }
+    })
+    return address;
+}
+
+
 // UPDATE CHECKOUT SESSION SHIPPING ADDRESS
 async function updateCheckoutShipping(userId, addressId) {
     // Update the checkout shipping info

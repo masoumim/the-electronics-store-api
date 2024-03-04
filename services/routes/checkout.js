@@ -293,6 +293,71 @@ router.put('/checkout/shipping/update-alt-address', userCheck, getCheckout, asyn
 /**
  * @swagger
  * /checkout/shipping/{addressId}:
+ *   post:
+ *     summary: Add Shipping Address to Checkout Session
+ *     tags: [Checkout]
+ *     requestBody:
+ *       description: The required request body for adding a shipping address
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             addressId: 12
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             example:
+ *               Address successfully added
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             example:
+ *               - Request Body is missing required data
+ *               - Invalid Request Body Data               
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             example:
+ *               User not logged in
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             example:
+ *               Checkout session not found 
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             example:
+ *               Error adding shipping address               
+ */
+router.post('/checkout/shipping/:addressId', userCheck, getCheckout, async (req, res) => {
+    try {
+        // Check if address exists
+        const foundAddress = await requests.getAddressById(req.user.id, parseInt(req.params.addressId));
+        if (!foundAddress) return res.status(400).json("Address not found");
+
+        // Check that the address is a shipping address (primary or alternative)
+        if (foundAddress.address_type === "shipping_primary" || foundAddress.address_type === "shipping_alternate") {
+            await requests.updateCheckoutShipping(req.user.id, parseInt(req.params.addressId));
+            res.status(200).json("Checkout shipping info updated");
+        }
+        else {
+            res.status(400).json("Invalid address");
+        }
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+
+/**
+ * @swagger
+ * /checkout/shipping/{addressId}:
  *   put:
  *     summary: Update the Checkout session's shipping address
  *     tags: [Checkout]
