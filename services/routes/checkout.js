@@ -591,14 +591,15 @@ router.put('/checkout/payment/payment-card', userCheck, getCheckout, async (req,
  *             example:
  *               Error updating session stage
  */
-router.put('/checkout/stage/stage-name', userCheck, getCheckout, async (req, res) => {
+router.put('/checkout/stage/:stagename', userCheck, getCheckout, async (req, res) => {
     try {
         // Check if stage name parameter is valid
         const stages = ["shipping", "payment", "review", "confirmation"];
-        if (!stages.includes(req.params.stageName)) return res.status(400).json("Invalid stage name");
+        if (!stages.includes(req.params.stagename)) return res.status(400).json("Invalid stage name");
+
 
         // Update checkout session stage
-        await requests.updateCheckoutStage(req.user.id, req.params.stageName);
+        await requests.updateCheckoutStage(req.user.id, req.params.stagename);
 
         res.status(200).json("Checkout stage updated");
     } catch (error) {
