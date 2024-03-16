@@ -554,11 +554,11 @@ router.put('/checkout/payment/payment-card', userCheck, getCheckout, async (req,
  *           type: string
  *           enum:
  *             - shipping
+ *             - billing
  *             - payment
  *             - review
- *             - confirmation
  *             - invalid test
- *         description: The session stage (shipping, payment, review or confirmation)
+ *         description: The session stage (shipping, billing, payment or review)
  *     responses:
  *       200:
  *         description: OK
@@ -594,7 +594,7 @@ router.put('/checkout/payment/payment-card', userCheck, getCheckout, async (req,
 router.put('/checkout/stage/:stagename', userCheck, getCheckout, async (req, res) => {
     try {
         // Check if stage name parameter is valid
-        const stages = ["shipping", "payment", "review", "confirmation"];
+        const stages = ["shipping", "billing", "payment", "review"];
         if (!stages.includes(req.params.stagename)) return res.status(400).json("Invalid stage name");
 
 
