@@ -175,10 +175,10 @@ router.get('/orders', userCheck, async (req, res) => {
 router.post('/orders/create', userCheck, getCart, getCheckout, async (req, res) => {
     try {        
         // Check if checkout session is at the confirmation stage
-        if(req.checkout.stage !== "confirmation") return res.status(400).json("Checkout session not at confirmation stage");
+        if(req.checkout.stage !== "review") return res.status(400).json("Checkout session not at review stage");
 
         // Confirm checkout info is set
-        if(!req.checkout.payment_card_id || !req.checkout.shipping_address_id || !req.checkout.billing_address_id) return res.status(400).json("Checkout data not set");
+        if(!req.checkout.shipping_address_id || !req.checkout.billing_address_id) return res.status(400).json("Checkout data not set");
         
         // Create a new order in the DB        
         await requests.addOrder(req.user.id, req.cart.id);
