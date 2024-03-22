@@ -17,7 +17,6 @@ model app_user {
   cart             cart[]
   checkout_session checkout_session[]
   order            order[]
-  payment_card     payment_card[]
 }
 
 model cart {
@@ -50,11 +49,9 @@ model order {
   subtotal                                   Decimal         @db.Decimal(7, 2)
   taxes                                      Decimal         @db.Decimal(7, 2)
   num_items                                  Int
-  payment_card_id                            Int
   shipping_address_id                        Int
   billing_address_id                         Int
   address_order_billing_address_idToaddress  address         @relation("order_billing_address_idToaddress", fields: [billing_address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  payment_card                               payment_card    @relation(fields: [payment_card_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   address_order_shipping_address_idToaddress address         @relation("order_shipping_address_idToaddress", fields: [shipping_address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   app_user                                   app_user        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   order_product                              order_product[]
@@ -114,30 +111,13 @@ model address {
 }
 
 model checkout_session {
-  id                  Int           @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   user_id             Int
-  payment_card_id     Int?
   shipping_address_id Int?
   cart_id             Int
-  stage               String        @default("shipping")
+  stage               String   @default("shipping")
   billing_address_id  Int?
-  cart                cart          @relation(fields: [cart_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  payment_card        payment_card? @relation(fields: [payment_card_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  address             address?      @relation(fields: [shipping_address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  app_user            app_user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model payment_card {
-  id                Int                @id @default(autoincrement())
-  user_id           Int
-  card_number       String
-  security_code     String
-  expiration_month  String
-  expiration_year   String
-  first_name        String
-  last_name         String
-  payment_card_type String
-  checkout_session  checkout_session[]
-  order             order[]
-  app_user          app_user           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  cart                cart     @relation(fields: [cart_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  address             address? @relation(fields: [shipping_address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user            app_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
