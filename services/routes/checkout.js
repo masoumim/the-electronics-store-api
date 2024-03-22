@@ -40,9 +40,6 @@ module.exports = router
  *         user_id:
  *           type: integer
  *           description: The user id of the user who the checkout session belongs to
- *         payment_card_id:
- *           type: integer
- *           description: The id of the payment card belonging to the user
  *         shipping_address_id:
  *           type: integer
  *           description: The id of the shipping address belonging to the user
@@ -54,13 +51,12 @@ module.exports = router
  *           description: The stage that the shipping process is currently in
  *           example:
  *             - shipping
+ *             - billing
  *             - payment
  *             - review
- *             - confirmation
  *       example:
  *         id: 1
  *         user_id: 6
- *         payment_card_id: 4
  *         shipping_address_id: 11
  *         cart_id: 3
  *         stage: payment
@@ -134,7 +130,6 @@ router.post('/checkout', userCheck, getCart, async (req, res) => {
  *             example:
  *               id: 1
  *               user_id: 6
- *               payment_card_id: 4
  *               shipping_address_id: 11
  *               cart_id: 3
  *               stage: payment
@@ -548,59 +543,6 @@ router.put('/checkout/payment/billing/:addressId', userCheck, getCheckout, async
         else {
             res.status(400).json("Invalid address");
         }
-    } catch (error) {
-        res.status(500).json(error);
-    }
-});
-
-/**
- * @swagger
- * /checkout/payment/payment-card:
- *   put:
- *     summary: Update the Checkout session's payment card id
- *     tags: [Checkout]
- *     responses:
- *       200:
- *         description: OK
- *         content:
- *           application/json:
- *             example:
- *               Checkout payment card updated
- *       400:
- *         description: Bad Request
- *         content:
- *           application/json:
- *             example:
- *               Payment card not found 
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             example:
- *               User not logged in
- *       404:
- *         description: Not Found
- *         content:
- *           application/json:
- *             example:
- *               Checkout session not found 
- *       500:
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             example:
- *               Error updating session payment card
- */
-router.put('/checkout/payment/payment-card', userCheck, getCheckout, async (req, res) => {
-    try {
-        // Check if payment card exists
-        const foundPaymentCard = await requests.getPaymentCard(req.user.id);
-        if (!foundPaymentCard) return res.status(400).json("Payment card not found");
-
-        // Update checkout session payment card id
-        await requests.updateCheckoutPaymentCard(req.user.id, foundPaymentCard.id);
-
-        res.status(200).json("Checkout payment card updated");
     } catch (error) {
         res.status(500).json(error);
     }
