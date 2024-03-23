@@ -174,7 +174,10 @@ router.get('/orders', userCheck, async (req, res) => {
  */
 router.post('/orders/create', userCheck, getCart, getCheckout, async (req, res) => {
     try {        
-        // Check if checkout session is at the confirmation stage
+        
+        console.log('/orders/create called!');
+        
+        // Check if checkout session is at the review stage
         if(req.checkout.stage !== "review") return res.status(400).json("Checkout session not at review stage");
 
         // Confirm checkout info is set
