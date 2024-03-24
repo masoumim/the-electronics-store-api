@@ -372,7 +372,7 @@ async function deleteProductFromCart(cartId, productId) {
 
         const updatedSubtotal = parseFloat(cart.subtotal) - parseFloat(cartProductTotalTruncated);
         const updatedTaxes = updatedSubtotal * 0.13;
-        
+
         // Calculate the total
         // *The postgresql db rounds decimal values to 2 decimal places when entered into the db.
         // 'updatedSubtotal' and 'updatedTaxes' are added to the db as decimals and then rounded automatically by postgres.
@@ -693,21 +693,7 @@ async function addOrder(userId, cartId) {
         orderBillingAddress = await getAddressById(userId, orderShippingAddress.id);
     }
 
-    // 4. Create the order's payment card
-    const checkoutPaymentCard = await getPaymentCard(userId);
-    const orderPaymentCardObj = {
-        cardNumber: checkoutPaymentCard.card_number,
-        firstName: checkoutPaymentCard.first_name,
-        lastName: checkoutPaymentCard.last_name,
-        securityCode: checkoutPaymentCard.security_code,
-        expirationMonth: checkoutPaymentCard.expiration_month,
-        expirationYear: checkoutPaymentCard.expiration_year,
-        paymentCardType: "order",
-        userId: userId
-    }
-    const orderPaymentCard = await addPaymentCard(orderPaymentCardObj);
-
-    // 5. Create the order
+    // 4. Create the order
     const order = await prisma.order.create({
         data: {
             user_id: userId,
@@ -715,13 +701,12 @@ async function addOrder(userId, cartId) {
             subtotal: checkoutSession.cart.subtotal,
             taxes: checkoutSession.cart.taxes,
             total: checkoutSession.cart.total,
-            payment_card_id: orderPaymentCard.id,
             shipping_address_id: orderShippingAddress.id,
             billing_address_id: orderBillingAddress.id
         }
     })
 
-    // 6. Create the order products
+    // 5. Create the order products
     const checkoutProducts = checkoutSession.cart.cart_product;
     const orderProducts = [];
     for (const checkoutProduct of checkoutProducts) {
@@ -736,21 +721,21 @@ async function addOrder(userId, cartId) {
         orderProducts.push(orderProduct);
     }
 
-    // 7. Delete the checkout session
-    await prisma.checkout_session.delete({
-        where: {
-            id: checkoutSession.id
-        }
-    })
+    // 6. TODO FIX THIS! It is causing an error. Delete the checkout session
+    // await prisma.checkout_session.delete({
+    //     where: {
+    //         id: checkoutSession.id
+    //     }
+    // })
 
-    // 8. Delete the cart products
+    // 7. Delete the cart products
     await prisma.cart_product.deleteMany({
         where: {
             cart_id: cartId
         }
     })
 
-    // 9. Clear the cart
+    // 8. Clear the cart
     await prisma.cart.update({
         where: {
             id: cartId
@@ -763,7 +748,7 @@ async function addOrder(userId, cartId) {
         }
     })
 
-    // 10. Delete the alternate shipping address if it exists
+    // 9. Delete the alternate shipping address if it exists
     if (checkoutShippingAddress.address_type === "shipping_alternate") {
         await prisma.address.deleteMany({
             where: {
@@ -773,7 +758,7 @@ async function addOrder(userId, cartId) {
         })
     }
 
-    // 11. Update product inventory    
+    // 10. Update product inventory    
     for (const orderProduct of orderProducts) {
         await prisma.product.update({
             where: {
@@ -827,17 +812,12 @@ module.exports = {
     deleteCheckout,
     updateCheckoutShipping,
     updateCheckoutBilling,
-    updateCheckoutPaymentCard,
     updateCheckoutStage,
     getAddressByType,
     getAddressById,
     addAddress,
     updateAddress,
     deleteAddress,
-    addPaymentCard,
-    getPaymentCard,
-    updatePaymentCard,
-    deletePaymentCard,
     addOrder,
     getOrders
 }
