@@ -42,19 +42,29 @@ model cart_product {
 }
 
 model order {
-  id                                         Int             @id @default(autoincrement())
-  user_id                                    Int
-  order_date                                 DateTime        @default(dbgenerated("(now())::date")) @db.Date
-  total                                      Decimal         @db.Decimal(7, 2)
-  subtotal                                   Decimal         @db.Decimal(7, 2)
-  taxes                                      Decimal         @db.Decimal(7, 2)
-  num_items                                  Int
-  shipping_address_id                        Int
-  billing_address_id                         Int
-  address_order_billing_address_idToaddress  address         @relation("order_billing_address_idToaddress", fields: [billing_address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  address_order_shipping_address_idToaddress address         @relation("order_shipping_address_idToaddress", fields: [shipping_address_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  app_user                                   app_user        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  order_product                              order_product[]
+  id                      Int             @id @default(autoincrement())
+  user_id                 Int
+  order_date              DateTime        @default(dbgenerated("(now())::date")) @db.Date
+  total                   Decimal         @db.Decimal(7, 2)
+  subtotal                Decimal         @db.Decimal(7, 2)
+  taxes                   Decimal         @db.Decimal(7, 2)
+  num_items               Int
+  shipping_street_address String
+  shipping_unit           String
+  shipping_city           String
+  shipping_province       String
+  shipping_country        String
+  shipping_postal_code    String
+  shipping_phone_number   String
+  billing_street_address  String
+  billing_unit            String
+  billing_city            String
+  billing_province        String
+  billing_country         String
+  billing_postal_code     String
+  billing_phone_number    String
+  app_user                app_user        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  order_product           order_product[]
 }
 
 model order_product {
@@ -92,22 +102,20 @@ model session {
 }
 
 model address {
-  id                                       Int                @id @default(autoincrement())
-  first_name                               String
-  last_name                                String
-  address                                  String
-  city                                     String
-  province                                 String
-  country                                  String
-  postal_code                              String
-  phone_number                             String
-  address_type                             String
-  user_id                                  Int
-  unit                                     String?
-  app_user                                 app_user           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  checkout_session                         checkout_session[]
-  order_order_billing_address_idToaddress  order[]            @relation("order_billing_address_idToaddress")
-  order_order_shipping_address_idToaddress order[]            @relation("order_shipping_address_idToaddress")
+  id               Int                @id @default(autoincrement())
+  first_name       String
+  last_name        String
+  address          String
+  city             String
+  province         String
+  country          String
+  postal_code      String
+  phone_number     String
+  address_type     String
+  user_id          Int
+  unit             String?
+  app_user         app_user           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  checkout_session checkout_session[]
 }
 
 model checkout_session {
