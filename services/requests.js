@@ -651,49 +651,58 @@ async function deletePaymentCard(paymentCardId, userId) {
 
 // ADD AN ORDER
 async function addOrder(userId, cartId) {
-    // 1. Get the checkout session
+
+    // Step 1. Get the checkout session
     const checkoutSession = await getCheckout(userId);
 
-    // 2. Create the order's shipping address
-    const checkoutShippingAddress = await getAddressById(userId, checkoutSession.shipping_address_id);
-    const orderShippingAddressObj = {
-        firstName: checkoutShippingAddress.first_name,
-        lastName: checkoutShippingAddress.last_name,
-        address: checkoutShippingAddress.address,
-        unit: checkoutShippingAddress.unit,
-        city: checkoutShippingAddress.city,
-        province: checkoutShippingAddress.province,
-        country: checkoutShippingAddress.country,
-        postalCode: checkoutShippingAddress.postal_code,
-        phoneNumber: checkoutShippingAddress.phone_number,
-        addressType: "shipping_order",
-        userId: userId
-    }
-    const orderShippingAddress = await addAddress(orderShippingAddressObj);
+    // Step 2: Fetch Shipping Address (if available)
+    let shippingAddress = null;
+    if (checkoutSession.shipping_address_id) {
+        shippingAddress = await getAddressById(userId, checkoutSession.shipping_address_id);
 
-    // 3. Create the order's billing address (if different from shipping address)
-    let orderBillingAddress;
-    if (checkoutSession.billing_address_id !== checkoutSession.shipping_address_id) {
-        const checkoutBillingAddress = await getAddressById(userId, checkoutSession.billing_address_id);
-        const orderBillingAddressObj = {
-            firstName: checkoutBillingAddress.first_name,
-            lastName: checkoutBillingAddress.last_name,
-            address: checkoutBillingAddress.address,
-            unit: checkoutBillingAddress.unit,
-            city: checkoutBillingAddress.city,
-            province: checkoutBillingAddress.province,
-            country: checkoutBillingAddress.country,
-            postalCode: checkoutBillingAddress.postal_code,
-            phoneNumber: checkoutBillingAddress.phone_number,
-            addressType: "billing_order",
-            userId: userId
+        if (!shippingAddress) {
+            throw new Error('Shipping address not found.');
         }
-        orderBillingAddress = await addAddress(orderBillingAddressObj);
-    } else {
-        orderBillingAddress = await getAddressById(userId, orderShippingAddress.id);
     }
 
-    // 4. Create the order
+    // Step 3: Fetch Billing Address 
+    const billingAddress = await getAddressById(userId, checkoutSession.billing_address_id);
+
+    if (!billingAddress) {
+        throw new Error('Billing address not found.');
+    }
+
+
+
+
+
+    // Create the order
+    // TODO: This is the new order schema, add all the fields to the prisma order.create() method
+    // model order {
+    //     id                      Int             @id @default(autoincrement())
+    //     user_id                 Int
+    //     order_date              DateTime        @default(dbgenerated("(now())::date")) @db.Date
+    //     total                   Decimal         @db.Decimal(7, 2)
+    //     subtotal                Decimal         @db.Decimal(7, 2)
+    //     taxes                   Decimal         @db.Decimal(7, 2)
+    //     num_items               Int
+    //     shipping_street_address String
+    //     shipping_unit           String
+    //     shipping_city           String
+    //     shipping_province       String
+    //     shipping_country        String
+    //     shipping_postal_code    String
+    //     shipping_phone_number   String
+    //     billing_street_address  String
+    //     billing_unit            String
+    //     billing_city            String
+    //     billing_province        String
+    //     billing_country         String
+    //     billing_postal_code     String
+    //     billing_phone_number    String
+    //     app_user                app_user        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+    //     order_product           order_product[]
+    //   }
     const order = await prisma.order.create({
         data: {
             user_id: userId,
@@ -706,7 +715,7 @@ async function addOrder(userId, cartId) {
         }
     })
 
-    // 5. Create the order products
+    // 3. Create an order product for each product in the cart
     const checkoutProducts = checkoutSession.cart.cart_product;
     const orderProducts = [];
     for (const checkoutProduct of checkoutProducts) {
@@ -721,21 +730,15 @@ async function addOrder(userId, cartId) {
         orderProducts.push(orderProduct);
     }
 
-    // 6. TODO FIX THIS! It is causing an error. Delete the checkout session
-    // await prisma.checkout_session.delete({
-    //     where: {
-    //         id: checkoutSession.id
-    //     }
-    // })
 
-    // 7. Delete the cart products
+    // 4. Delete the cart products
     await prisma.cart_product.deleteMany({
         where: {
             cart_id: cartId
         }
     })
 
-    // 8. Clear the cart
+    // 5. Clear the cart
     await prisma.cart.update({
         where: {
             id: cartId
@@ -748,7 +751,7 @@ async function addOrder(userId, cartId) {
         }
     })
 
-    // 9. Delete the alternate shipping address if it exists
+    // 6. Delete the alternate shipping address if it exists
     if (checkoutShippingAddress.address_type === "shipping_alternate") {
         await prisma.address.deleteMany({
             where: {
@@ -758,7 +761,7 @@ async function addOrder(userId, cartId) {
         })
     }
 
-    // 10. Update product inventory    
+    // 7. Update product inventory    
     for (const orderProduct of orderProducts) {
         await prisma.product.update({
             where: {
@@ -774,6 +777,13 @@ async function addOrder(userId, cartId) {
             }
         })
     }
+
+    // 8. Delete the checkout session
+    await prisma.checkout_session.delete({
+        where: {
+            id: checkoutSession.id
+        }
+    })
 }
 
 // GET ORDERS
