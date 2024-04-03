@@ -119,13 +119,13 @@ module.exports = router
  *               Error retrieving orders               
  */
 router.get('/orders', userCheck, async (req, res) => {
-    try {        
+    try {
         // Get the orders belonging to the user
         const foundOrders = await requests.getOrders(req.user.id);
 
         // Check if orders were found
-        if(foundOrders.length === 0) return res.status(404).json("No orders found");
-        
+        if (foundOrders.length === 0) return res.status(404).json("No orders found");
+
         // Send orders in response
         res.status(200).json(foundOrders);
     } catch (error) {
@@ -173,19 +173,16 @@ router.get('/orders', userCheck, async (req, res) => {
  *               Error creating order               
  */
 router.post('/orders/create', userCheck, getCart, getCheckout, async (req, res) => {
-    try {        
-        
-        console.log('/orders/create called!');
-        
+    try {
         // Check if checkout session is at the review stage
-        if(req.checkout.stage !== "review") return res.status(400).json("Checkout session not at review stage");
+        if (req.checkout.stage !== "review") return res.status(400).json("Checkout session not at review stage");
 
         // Confirm checkout info is set
-        if(!req.checkout.shipping_address_id || !req.checkout.billing_address_id) return res.status(400).json("Checkout data not set");
-        
+        if (!req.checkout.shipping_address_id || !req.checkout.billing_address_id) return res.status(400).json("Checkout data not set");
+
         // Create a new order in the DB        
         await requests.addOrder(req.user.id, req.cart.id);
-                                        
+
         res.status(200).json("Order successfully created");
     } catch (error) {
         res.status(500).json(error);

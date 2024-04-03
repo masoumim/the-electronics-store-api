@@ -724,20 +724,7 @@ async function addOrder(userId, cartId) {
         }
     })
 
-    // Step 7: Clear the cart
-    await prisma.cart.update({
-        where: {
-            id: cartId
-        },
-        data: {
-            num_items: 0,
-            subtotal: 0,
-            taxes: 0,
-            total: 0
-        }
-    })
-
-    // Step 8: Update product inventory
+    // Step 7: Update product inventory
     for (const orderProduct of orderProducts) {
         await prisma.product.update({
             where: {
@@ -754,7 +741,7 @@ async function addOrder(userId, cartId) {
         })
     }
 
-    // Step 9: Delete the alternate shipping address if it exists
+    // Step 8: Delete the alternate shipping address if it exists
     if (shippingAddress.address_type === "shipping_alternate") {
         await prisma.address.deleteMany({
             where: {
@@ -764,10 +751,24 @@ async function addOrder(userId, cartId) {
         })
     }
 
-    // Step 10: Delete the checkout session
+    // Step 9: Delete the checkout session
     await prisma.checkout_session.delete({
         where: {
             id: checkoutSession.id
+        }
+    })
+
+
+    // Step 10: Clear the cart
+    await prisma.cart.update({
+        where: {
+            id: cartId
+        },
+        data: {
+            num_items: 0,
+            subtotal: 0,
+            taxes: 0,
+            total: 0
         }
     })
 }
