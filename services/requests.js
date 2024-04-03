@@ -672,37 +672,7 @@ async function addOrder(userId, cartId) {
         throw new Error('Billing address not found.');
     }
 
-
-
-
-
-    // Create the order
-    // TODO: This is the new order schema, add all the fields to the prisma order.create() method
-    // model order {
-    //     id                      Int             @id @default(autoincrement())
-    //     user_id                 Int
-    //     order_date              DateTime        @default(dbgenerated("(now())::date")) @db.Date
-    //     total                   Decimal         @db.Decimal(7, 2)
-    //     subtotal                Decimal         @db.Decimal(7, 2)
-    //     taxes                   Decimal         @db.Decimal(7, 2)
-    //     num_items               Int
-    //     shipping_street_address String
-    //     shipping_unit           String
-    //     shipping_city           String
-    //     shipping_province       String
-    //     shipping_country        String
-    //     shipping_postal_code    String
-    //     shipping_phone_number   String
-    //     billing_street_address  String
-    //     billing_unit            String
-    //     billing_city            String
-    //     billing_province        String
-    //     billing_country         String
-    //     billing_postal_code     String
-    //     billing_phone_number    String
-    //     app_user                app_user        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-    //     order_product           order_product[]
-    //   }
+    // Step 4: Create the order
     const order = await prisma.order.create({
         data: {
             user_id: userId,
@@ -710,12 +680,28 @@ async function addOrder(userId, cartId) {
             subtotal: checkoutSession.cart.subtotal,
             taxes: checkoutSession.cart.taxes,
             total: checkoutSession.cart.total,
-            shipping_address_id: orderShippingAddress.id,
-            billing_address_id: orderBillingAddress.id
+
+            // Embed Shipping Address Fields
+            shipping_street_address: shippingAddress.address,
+            shipping_unit: shippingAddress.unit,
+            shipping_city: shippingAddress.city,
+            shipping_province: shippingAddress.province,
+            shipping_country: shippingAddress.country,
+            shipping_postal_code: shippingAddress.postal_code,
+            shipping_phone_number: shippingAddress.phone_number,
+
+            // Embed Billing Address Fields (Similarly)
+            billing_street_address: billingAddress.address,
+            billing_unit: billingAddress.unit,
+            billing_city: billingAddress.city,
+            billing_province: billingAddress.province,
+            billing_country: billingAddress.country,
+            billing_postal_code: billingAddress.postal_code,
+            billing_phone_number: billingAddress.phone_number,
         }
     })
 
-    // 3. Create an order product for each product in the cart
+    // Step 5: Create an order product for each product in the cart
     const checkoutProducts = checkoutSession.cart.cart_product;
     const orderProducts = [];
     for (const checkoutProduct of checkoutProducts) {
@@ -731,14 +717,14 @@ async function addOrder(userId, cartId) {
     }
 
 
-    // 4. Delete the cart products
+    // Step 6: Delete the cart products
     await prisma.cart_product.deleteMany({
         where: {
             cart_id: cartId
         }
     })
 
-    // 5. Clear the cart
+    // Step 7: Clear the cart
     await prisma.cart.update({
         where: {
             id: cartId
@@ -751,17 +737,7 @@ async function addOrder(userId, cartId) {
         }
     })
 
-    // 6. Delete the alternate shipping address if it exists
-    if (checkoutShippingAddress.address_type === "shipping_alternate") {
-        await prisma.address.deleteMany({
-            where: {
-                user_id: userId,
-                address_type: "shipping_alternate"
-            }
-        })
-    }
-
-    // 7. Update product inventory    
+    // Step 8: Update product inventory
     for (const orderProduct of orderProducts) {
         await prisma.product.update({
             where: {
@@ -778,7 +754,17 @@ async function addOrder(userId, cartId) {
         })
     }
 
-    // 8. Delete the checkout session
+    // Step 9: Delete the alternate shipping address if it exists
+    if (shippingAddress.address_type === "shipping_alternate") {
+        await prisma.address.deleteMany({
+            where: {
+                user_id: userId,
+                address_type: "shipping_alternate"
+            }
+        })
+    }
+
+    // Step 10: Delete the checkout session
     await prisma.checkout_session.delete({
         where: {
             id: checkoutSession.id
