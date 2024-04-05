@@ -807,6 +807,22 @@ async function getOrders(userId) {
     }
 }
 
+// GET COMPUTERS
+async function getComputers() {
+    try {
+        const computers = await prisma.product.findMany({
+            where: {
+                category_code: {
+                    startsWith: 'COM'
+                }
+            }
+        });
+        return computers;
+    } catch (error) {
+        throw new Error('Database error when fetching computers: ' + error.message);
+    }
+}
+
 module.exports = {
     getAllUsers,
     getUserByEmail,
@@ -837,5 +853,6 @@ module.exports = {
     updateAddress,
     deleteAddress,
     addOrder,
-    getOrders,    
+    getOrders,
+    getComputers,
 }
