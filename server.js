@@ -214,8 +214,9 @@ const cartRouter = require("./services/routes/cart.js");
 const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
+const computersRouter = require("./services/routes/computers.js");
 // const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
-app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter);
+app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter);
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
