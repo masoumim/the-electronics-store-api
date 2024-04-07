@@ -823,6 +823,22 @@ async function getComputers() {
     }
 }
 
+// GET GAMING PRODUCTS
+async function getGaming() {
+    try {
+        const gamingProducts = await prisma.product.findMany({
+            where: {
+                category_code: {
+                    startsWith: 'GAM'
+                }
+            }
+        });
+        return gamingProducts;
+    } catch (error) {
+        throw new Error('Database error when fetching gaming products: ' + error.message);
+    }
+}
+
 module.exports = {
     getAllUsers,
     getUserByEmail,
@@ -855,4 +871,5 @@ module.exports = {
     addOrder,
     getOrders,
     getComputers,
+    getGaming,
 }

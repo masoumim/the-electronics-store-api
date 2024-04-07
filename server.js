@@ -113,7 +113,7 @@ app.post('/firebase-auth', async (req, res, next) => {
 // Sets authenticatedUser directly (this route is called when a new user is registered on the frontend)
 app.post('/sign-in-new-user', (req, res) => {
     // console.log('/sign-in-new-user called!');           
-    authenticatedUser = req.body;    
+    authenticatedUser = req.body;
     // console.log('/sign-in-new-user called! Setting authenticatedUser to: ');
     // console.log(authenticatedUser);
     res.status(200).json("New User signed in");
@@ -132,7 +132,7 @@ app.get('/check-backend-sign-in', (req, res) => {
     // console.log('/check-backend-sign-in called!');
     // console.log('authenticatedUser = ');
     // console.log(authenticatedUser);
-    
+
     if (authenticatedUser) {
         res.status(200).json(true);
     }
@@ -215,8 +215,9 @@ const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
 const computersRouter = require("./services/routes/computers.js");
+const gamingRouter = require("./services/routes/gaming.js"); // Add this line
 // const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
-app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter);
+app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter, gamingRouter); // Add firebaseAuthRouter to the list of routers
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
