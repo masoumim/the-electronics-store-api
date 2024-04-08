@@ -215,9 +215,11 @@ const ordersRouter = require("./services/routes/orders.js");
 const checkoutRouter = require("./services/routes/checkout.js");
 const accountRouter = require("./services/routes/account.js");
 const computersRouter = require("./services/routes/computers.js");
-const gamingRouter = require("./services/routes/gaming.js"); // Add this line
-// const firebaseAuthRouter = require("./services/routes/firebase-auth.js");
-app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter, gamingRouter); // Add firebaseAuthRouter to the list of routers
+const gamingRouter = require("./services/routes/gaming.js");
+const homeElectronicsRouter = require("./services/routes/home-electronics.js");
+
+// Add firebaseAuthRouter to the list of routers
+app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter, gamingRouter, homeElectronicsRouter); 
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;

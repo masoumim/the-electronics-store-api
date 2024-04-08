@@ -823,7 +823,7 @@ async function getComputers() {
     }
 }
 
-// GET GAMING PRODUCTS
+// GET GAMING PRODUCTS0
 async function getGaming() {
     try {
         const gamingProducts = await prisma.product.findMany({
@@ -836,6 +836,22 @@ async function getGaming() {
         return gamingProducts;
     } catch (error) {
         throw new Error('Database error when fetching gaming products: ' + error.message);
+    }
+}
+
+// GET HOME ELECTRONICS
+async function getHomeElectronics() {
+    try {
+        const homeElectronicsProducts = await prisma.product.findMany({
+            where: {
+                category_code: {
+                    startsWith: 'HOM'
+                }
+            }
+        });
+        return homeElectronicsProducts;
+    } catch (error) {
+        throw new Error('Database error when fetching home electronics products: ' + error.message);
     }
 }
 
@@ -872,4 +888,5 @@ module.exports = {
     getOrders,
     getComputers,
     getGaming,
+    getHomeElectronics,
 }
