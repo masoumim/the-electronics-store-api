@@ -855,6 +855,22 @@ async function getHomeElectronics() {
     }
 }
 
+// GET CAMERAS & DRONES PRODUCTS
+async function getCamerasDrones() {
+    try {
+        const camerasDronesProducts = await prisma.product.findMany({
+            where: {
+                category_code: {
+                    startsWith: 'CAM'
+                }
+            }
+        });
+        return camerasDronesProducts;
+    } catch (error) {
+        throw new Error('Database error when fetching cameras and drones products: ' + error.message);
+    }
+}
+
 module.exports = {
     getAllUsers,
     getUserByEmail,
@@ -889,4 +905,5 @@ module.exports = {
     getComputers,
     getGaming,
     getHomeElectronics,
+    getCamerasDrones,
 }
