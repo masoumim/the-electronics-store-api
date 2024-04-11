@@ -147,29 +147,37 @@ router.get('/cart', userCheck, getCart, async (req, res) => {
  */
 router.post('/cart/add/:productId', userCheck, getCart, async (req, res) => {
     try {
-        // Check if the product exists
+        console.log(`Adding product with ID ${req.params.productId} to cart`);
+
         const product = await requests.getProductById(parseInt(req.params.productId));
-        if (!product) return res.status(404).json("Product not found");
+        if (!product) {
+            console.log(`Product with ID ${req.params.productId} not found`);
+            return res.status(404).json("Product not found");
+        }
 
-        // Check if product is in stock
-        if(product.inventory === 0) return res.status(400).json("Product is out of stock");
+        if(product.inventory === 0) {
+            console.log(`Product with ID ${req.params.productId} is out of stock`);
+            return res.status(400).json("Product is out of stock");
+        }
 
-        // Check if there is enough inventory to add to cart
         for(const cartProduct of req.cart.cart_product) {            
             if(cartProduct.product_id === parseInt(req.params.productId)){                
-                if (cartProduct.quantity === product.inventory) return res.status(400).json("Not enough inventory to add to cart");
+                if (cartProduct.quantity === product.inventory) {
+                    console.log(`Not enough inventory to add product with ID ${req.params.productId} to cart`);
+                    return res.status(400).json("Not enough inventory to add to cart");
+                }
             }
         }
         
-        // Add product to the cart_product table in DB
         await requests.addProductToCart(req.cart.id, parseInt(req.params.productId));
+        console.log(`Product with ID ${req.params.productId} successfully added to cart`);
 
-        // If user has items in checkout, reset the checkout stage to "payment"
         const foundCheckout = await requests.getCheckout(req.user.id);
         if(foundCheckout) await requests.updateCheckoutStage(req.user.id, "shipping");
                                         
         res.status(200).json("Product successfully added to Cart");
     } catch (error) {
+        console.log(`Error adding product with ID ${req.params.productId} to cart: ${error}`);
         res.status(500).json(error);
     }
 });

@@ -86,7 +86,7 @@ model product {
   category_code    String
   discount_type    String          @default("none")
   total_sold       Int             @default(0)
-  img_filename     String
+  img_url          String
   discount_percent Int             @default(0)
   item_code        String          @unique
   cart_product     cart_product[]
