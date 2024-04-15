@@ -871,6 +871,36 @@ async function getCamerasDrones() {
     }
 }
 
+// GET PRODUCTS BY CATEGORY CODE
+async function getProductsByCategoryCode(categoryCode) {
+    try {
+        const products = await prisma.product.findMany({
+            where: {
+                category_code: categoryCode
+            }
+        });
+        return products;
+    } catch (error) {
+        throw new Error('Database error when fetching products by category code: ' + error.message);
+    }
+}
+
+// GET PRODUCTS CONTAINING CATEGORY CODE
+async function getProductsContainingCategoryCode(categoryCode) {
+    try {
+        const products = await prisma.product.findMany({
+            where: {
+                category_code: {
+                    contains: categoryCode
+                }
+            }
+        });
+        return products;
+    } catch (error) {
+        throw new Error('Database error when fetching products containing category code: ' + error.message);
+    }
+}
+
 module.exports = {
     getAllUsers,
     getUserByEmail,
@@ -882,8 +912,10 @@ module.exports = {
     updateUserPassword,
     getAllProducts,
     getProductById,
+    getProductsByCategoryCode,
     getProductByQuery,
     getProductsByMultiQuery,
+    getProductsContainingCategoryCode,
     addCart,
     getCartByUserId,
     addProductToCart,

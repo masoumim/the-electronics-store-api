@@ -216,3 +216,124 @@ router.get('/products/:id', async (req, res) => {
         res.status(500).json(error);
     }
 });
+
+/**
+ * @swagger
+ * /products/category/{category_code}:
+ *   get:
+ *     summary: Get products by category code
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: category_code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The category code
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *             example:
+ *               - id: 1
+ *                 name: PlayStation 5
+ *                 description: Sony PlayStation 5 game console
+ *                 inventory: 25
+ *                 price: 649.95
+ *                 category_code: GAMCONPLA
+ *                 discount_type: none
+ *                 total_sold: 50
+ *                 img_filename: ps5.jpg
+ *                 discount percent: 0
+ *                 item_code: SONPLA000001
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             example:
+ *               No products found for given category code
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             example:
+ *               Error retrieving products
+ */
+router.get('/products/category/:category_code', async (req, res) => {
+    try {
+        // Get products from the db by category code
+        const products = await requests.getProductsByCategoryCode(req.params.category_code);
+
+        // Send 404 response if no products found for given category code
+        if(!products || products.length === 0) return res.status(404).json("No products found for given category code");
+
+        // Send products array in response
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+
+
+/**
+ * @swagger
+ * /products/category/contains/{category_code}:
+ *   get:
+ *     summary: Get products containing category code
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: category_code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The category code
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *             example:
+ *               - id: 1
+ *                 name: PlayStation 5
+ *                 description: Sony PlayStation 5 game console
+ *                 inventory: 25
+ *                 price: 649.95
+ *                 category_code: GAMCONPLA
+ *                 discount_type: none
+ *                 total_sold: 50
+ *                 img_filename: ps5.jpg
+ *                 discount percent: 0
+ *                 item_code: SONPLA000001
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             example:
+ *               No products found for given category code
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             example:
+ *               Error retrieving products
+ */
+router.get('/products/category/contains/:category_code', async (req, res) => {
+    try {
+        // Get products from the db by category code
+        const products = await requests.getProductsContainingCategoryCode(req.params.category_code);
+
+        // Send 404 response if no products found for given category code
+        if(!products || products.length === 0) return res.status(404).json("No products found for given category code");
+
+        // Send products array in response
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
