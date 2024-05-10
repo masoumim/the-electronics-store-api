@@ -6,7 +6,9 @@ function userCheck(req, res, next){
     if (!req.user){
         console.log('userCheck: User not logged in');
         return res.status(401).json("User not logged in");
-    } 
+    }else{
+        console.log('userCheck: User logged in');
+    }
 
     // If there is an ID parameter, confirm the logged in user's ID matches the ID parameter
     if (req.params.id && req.user.id !== parseInt(req.params.id)) return res.status(403).json("User ID does not match ID in URL");

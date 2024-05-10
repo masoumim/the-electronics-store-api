@@ -65,6 +65,123 @@ module.exports = router
 
 /**
  * @swagger
+ * /checkout/shipping/alt-address:
+ *   post:
+ *     summary: Add alternate shipping address
+ *     tags: [Checkout]
+ *     requestBody:
+ *       description: The required request body for adding an alternate shipping address
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             firstName: Mark
+ *             lastName: Masoumi
+ *             address: 123 Alternate Avenue
+ *             unit: 4B
+ *             city: Toronto
+ *             province: Ontario
+ *             country: Canada
+ *             postalCode: A1L2T3
+ *             phoneNumber: "5551234567"
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             example:
+ *               Address successfully created
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             example:
+ *               - Alternate shipping address already exists
+ *               - Request Body is missing required data
+ *               - Invalid Request Body Data               
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             example:
+ *               User not logged in
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             example:
+ *               Checkout session not found 
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             example:
+ *               Error creating address               
+ */
+router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req, res) => {
+    console.log('POST /checkout/shipping/alt-address called')
+
+    try {
+        // Check if user has an alternate shipping address already
+        const foundAltShippingAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
+        if (foundAltShippingAddress) return res.status(400).json("Alternate shipping address already exists");
+
+        // Check that request body isn't missing data        
+        const reqBodyKeys = Object.keys(req.body);
+        const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
+        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
+        if (!hasData) return res.status(400).json("Request Body is missing required data");
+
+        // Validate user input                
+        const validationArray = [];
+        validationArray.push(validator.isAlpha(req.body.firstName));
+        validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
+        validationArray.push(validator.isAlpha(req.body.lastName));
+        validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
+        validationArray.push(validator.isLength(req.body.address, { min: 1, max: 50 }));
+        validationArray.push(validator.isAlpha(req.body.city));
+        validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
+        validationArray.push(validator.isAlpha(req.body.province));
+        validationArray.push(validator.isLength(req.body.province, { min: 1, max: 50 }));
+        validationArray.push(validator.isAlpha(req.body.country));
+        validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
+        validationArray.push(validator.isAlphanumeric(req.body.postalCode));
+        validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
+        validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
+
+        // Check if any element in array is false
+        const foundInvalidInput = validationArray.some((e) => { return e === false });
+        if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
+
+        // Get the address info from the request body
+        const altAddress = {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            address: req.body.address,
+            unit: req.body.unit,
+            city: req.body.city,
+            province: req.body.province,
+            country: req.body.country,
+            postalCode: req.body.postalCode,
+            phoneNumber: req.body.phoneNumber,
+            addressType: "shipping_alternate",
+            userId: req.user.id
+        }
+
+        // Add the address
+        await requests.addAddress(altAddress);
+
+        res.status(200).json("Alternate shipping address created");
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
+
+
+
+
+/**
+ * @swagger
  * /checkout:
  *   post:
  *     summary: Create a Checkout session
@@ -218,6 +335,8 @@ router.get('/checkout', userCheck, getCheckout, async (req, res) => {
  *               Error updating address               
  */
 router.put('/checkout/shipping/update-alt-address', userCheck, getCheckout, async (req, res) => {
+    console.log('PUT /checkout/shipping/update-alt-address called');
+
     try {
         // Check if there is an alternate shipping address to update
         const foundAltShippingAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
@@ -615,117 +734,25 @@ router.put('/checkout/stage/:stagename', userCheck, getCheckout, async (req, res
     }
 });
 
-/**
- * @swagger
- * /checkout/shipping/alt-address:
- *   post:
- *     summary: Add alternate shipping address
- *     tags: [Checkout]
- *     requestBody:
- *       description: The required request body for adding an alternate shipping address
- *       required: true
- *       content:
- *         application/json:
- *           example:
- *             firstName: Mark
- *             lastName: Masoumi
- *             address: 123 Alternate Avenue
- *             unit: 4B
- *             city: Toronto
- *             province: Ontario
- *             country: Canada
- *             postalCode: A1L2T3
- *             phoneNumber: "5551234567"
- *     responses:
- *       201:
- *         description: Created
- *         content:
- *           application/json:
- *             example:
- *               Address successfully created
- *       400:
- *         description: Bad Request
- *         content:
- *           application/json:
- *             example:
- *               - Alternate shipping address already exists
- *               - Request Body is missing required data
- *               - Invalid Request Body Data               
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             example:
- *               User not logged in
- *       404:
- *         description: Not Found
- *         content:
- *           application/json:
- *             example:
- *               Checkout session not found 
- *       500:
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             example:
- *               Error creating address               
- */
-router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req, res) => {
-    try {
-        // Check if user has an alternate shipping address already
-        const foundAltShippingAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
-        if (foundAltShippingAddress) return res.status(400).json("Alternate shipping address already exists");
 
-        // Check that request body isn't missing data        
-        const reqBodyKeys = Object.keys(req.body);
-        const requiredData = ['firstName', 'lastName', 'address', 'city', 'province', 'country', 'postalCode', 'phoneNumber'];
-        const hasData = requiredData.every(value => { return reqBodyKeys.includes(value) });
-        if (!hasData) return res.status(400).json("Request Body is missing required data");
 
-        // Validate user input                
-        const validationArray = [];
-        validationArray.push(validator.isAlpha(req.body.firstName));
-        validationArray.push(validator.isLength(req.body.firstName, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.lastName));
-        validationArray.push(validator.isLength(req.body.lastName, { min: 1, max: 50 }));
-        validationArray.push(validator.isLength(req.body.address, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.city));
-        validationArray.push(validator.isLength(req.body.city, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.province));
-        validationArray.push(validator.isLength(req.body.province, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlpha(req.body.country));
-        validationArray.push(validator.isLength(req.body.country, { min: 1, max: 50 }));
-        validationArray.push(validator.isAlphanumeric(req.body.postalCode));
-        validationArray.push(validator.isLength(req.body.postalCode, { min: 6, max: 6 }));
-        validationArray.push(validator.isMobilePhone(req.body.phoneNumber));
 
-        // Check if any element in array is false
-        const foundInvalidInput = validationArray.some((e) => { return e === false });
-        if (foundInvalidInput) return res.status(400).json("Invalid Request Body Data");
 
-        // Get the address info from the request body
-        const altAddress = {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            address: req.body.address,
-            unit: req.body.unit,
-            city: req.body.city,
-            province: req.body.province,
-            country: req.body.country,
-            postalCode: req.body.postalCode,
-            phoneNumber: req.body.phoneNumber,
-            addressType: "shipping_alternate",
-            userId: req.user.id
-        }
 
-        // Add the address
-        await requests.addAddress(altAddress);
 
-        res.status(200).json("Alternate shipping address created");
-    } catch (error) {
-        res.status(500).json(error);
-    }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @swagger
@@ -770,6 +797,8 @@ router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req
  */
 router.get('/checkout/shipping/alt-address', userCheck, async (req, res) => {
     try {
+        console.log('GET /checkout/shipping/alt-address called');
+
         // Get the alternate address
         const foundAddress = await requests.getAddressByType(req.user.id, "shipping_alternate");
 

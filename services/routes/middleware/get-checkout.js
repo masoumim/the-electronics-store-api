@@ -8,9 +8,10 @@ async function getCheckout(req, res, next) {
     const foundCheckout = await requests.getCheckout(req.user.id);
 
     // Check if checkout session is found
-    if(!foundCheckout) return res.status(404).json("Checkout session not found");
-    
+    if (!foundCheckout) return res.status(404).json("Checkout session not found");
+
     // Attach checkout session to request object
+    console.log(`getCheckout: foundCheckout = `, foundCheckout);
     req.checkout = foundCheckout;
 
     // Pass control to the next middleware function
