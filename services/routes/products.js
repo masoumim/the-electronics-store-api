@@ -277,7 +277,6 @@ router.get('/products/category/:category_code', async (req, res) => {
     }
 });
 
-
 /**
  * @swagger
  * /products/category/contains/{category_code}:

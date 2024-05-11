@@ -177,9 +177,6 @@ router.post('/checkout/shipping/alt-address', userCheck, getCheckout, async (req
     }
 });
 
-
-
-
 /**
  * @swagger
  * /checkout:
@@ -733,26 +730,6 @@ router.put('/checkout/stage/:stagename', userCheck, getCheckout, async (req, res
         res.status(500).json(error);
     }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @swagger
