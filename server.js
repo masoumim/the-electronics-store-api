@@ -218,9 +218,10 @@ const computersRouter = require("./services/routes/computers.js");
 const gamingRouter = require("./services/routes/gaming.js");
 const homeElectronicsRouter = require("./services/routes/home-electronics.js");
 const camerasDronesRouter = require("./services/routes/cameras-drones.js");
+const addressRouter = require("./services/routes/address.js");
 
 // Add firebaseAuthRouter to the list of routers
-app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter, gamingRouter, homeElectronicsRouter, camerasDronesRouter);
+app.use(usersRouter, registerRouter, productsRouter, cartRouter, ordersRouter, checkoutRouter, accountRouter, computersRouter, gamingRouter, homeElectronicsRouter, camerasDronesRouter, addressRouter);
 
 // The port which the app will run on
 const PORT = process.env.PORT || 8080;
